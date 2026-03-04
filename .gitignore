@@ -11,3 +11,4 @@ wheels/
 logs/
 *.log
 CLAUDE.md
+.planning/*
