@@ -1,249 +1,162 @@
-# 🎨 Ollama 图片生成 UI
+# 🎨 Ollama WebUI for Image Generate
 
-基于 Flask + Ollama 的本地 AI 图片生成工具，支持响应式设计（PC + 移动端）。
+> **为什么做这个项目？**
 
-## ✨ 特性
+Ollama 是优秀的本地 LLM 运行工具，但它缺乏图像生成的可视化界面。用户必须通过命令行或 API 调用来生成图片，体验不够友好。
 
-- 🚀 **本地运行**: 使用 Ollama 本地模型，无需 API 密钥
-- 🎨 **响应式设计**: 完美支持 PC 端和移动端
-- 🖼️ **图像画廊**: 响应式网格布局，展示所有生成的图片
-- 📊 **生成统计**: 显示耗时、尺寸、模型等信息
-- 💾 **自动保存**: 生成的图片自动保存到 `data/images/` 目录
-- 🌐 **双页面设计**: 图像生成页面 + 画廊页面
-- 📱 **移动端友好**: 汉堡菜单 + 堆叠表单布局
+这个项目填补了这个空白——为 Ollama 的图像生成能力提供一个简洁易用的 Web 界面，让你能在浏览器中直接生成图片，无需记忆命令或编写代码。
 
-## 📋 前置要求
+---
 
-1. **Python 3.11+**
-2. **Ollama 已安装并运行**
+## 🎯 支持的模型
+
+本项目专门优化适配以下两个 Ollama 图像生成模型：
+
+| 模型 | 特点 | 链接 |
+|------|------|------|
+| **x/flux2-klein** | 高质量图像生成，适合需要精细场景的创作 | [ollama.com/x/flux2-klein](https://ollama.com/x/flux2-klein) |
+| **x/z-image-turbo** | 快速生成，适合频繁迭代和测试 | [ollama.com/x/z-image-turbo](https://ollama.com/x/z-image-turbo) |
+
+---
+
+## ✨ 核心功能
+
+| 功能 | 说明 |
+|------|------|
+| **🖼️ 图像生成** | 输入提示词，选择模型和尺寸，一键生成 |
+| **🎨 画廊浏览** | 响应式网格展示所有历史生成，支持筛选和删除 |
+| **📊 生成统计** | 每张图显示耗时、尺寸、模型等元信息 |
+| **💾 自动保存** | 图片存至 `data/images/`，历史记录存至 `data/history.json` |
+| **🌙 深色模式** | 支持明暗主题切换，自动记住偏好 |
+| **📱 响应式** | PC 和移动端完美适配 |
+
+---
+
+## 🖼️ 界面预览
+
+### PC 端
+
+![PC端界面](images/webui-pc.png)
+
+### 移动端
+
+<table>
+  <tr>
+    <td width="50%">
+      <img src="images/webui-mobile-form-light.png" alt="移动端浅色模式" />
+      <p align="center">浅色模式</p>
+    </td>
+    <td width="50%">
+      <img src="images/webui-mobile-dark.png" alt="移动端深色模式" />
+      <p align="center">深色模式</p>
+    </td>
+  </tr>
+</table>
+
+---
+
+## 📋 快速开始
+
+### 前置要求
+
+1. **Ollama 已安装并运行**
    ```bash
-   # 安装 Ollama (如果未安装)
+   # 安装 Ollama (macOS/Linux)
    curl -fsSL https://ollama.com/install.sh | sh
 
    # 启动 Ollama 服务
    ollama serve
    ```
 
-3. **安装图片生成模型**
+2. **拉取图像生成模型**（选一个或都安装）
    ```bash
-   # 示例：安装 Flux 模型
+   # 高质量生成（推荐）
    ollama pull x/flux2-klein:9b
 
-   # 或安装其他模型
+   # 快速生成
    ollama pull x/z-image-turbo:fp8
    ```
 
-## 🚀 快速开始
-
-### 1. 安装依赖
+### 安装与运行
 
 ```bash
+# 1. 安装 Python 依赖
 uv sync
-```
 
-### 2. 启动应用
-
-```bash
+# 2. 启动服务（端口 8090）
 uv run python app.py
+
+# 3. 浏览器访问
+open http://127.0.0.1:8090
 ```
 
-### 3. 访问应用
+## 📚 使用指南
 
-打开浏览器访问：**http://127.0.0.1:5000**
+### 生成图片
 
-## 📚 使用方法
+1. 选择模型（推荐 `x/flux2-klein:9b`）
+2. 输入提示词（中文或英文均可）
+3. 设置尺寸（256-2048，必须是 64 的倍数）
+4. 点击"生成图像"等待完成
 
-### 图像生成页面
+### 浏览画廊
 
-1. **选择模型**: 在下拉菜单中选择图片生成模型
-   - `x/flux2-klein:9b` (推荐)
-   - `x/z-image-turbo:fp8`
+- 点击导航栏"画廊"查看所有历史生成
+- 支持按模型筛选
+- 点击图片查看大图
+- 悬停可删除图片
 
-2. **输入 Prompt**: 在文本框中输入图片描述
+---
 
-3. **调整尺寸**: 设置图片宽度和高度（256-2048，必须是 64 的倍数）
-
-4. **生成图片**: 点击"生成图像"按钮
-
-5. **查看结果**: 等待生成完成，查看生成的图片和统计信息
-
-### 画廊页面
-
-1. 点击顶部导航栏的"画廊"链接
-2. 查看所有历史生成的图片
-3. 点击图片可在新标签页查看大图
-4. 每张图片显示：
-   - 提示词（截取前 100 字符）
-   - 图片尺寸（📐）
-   - 使用的模型（🤖）
-   - 生成耗时（⏱️）
-   - 时间戳
-
-## 💡 Prompt 示例
+## 💡 提示词示例
 
 ```
 一颗苹果，挂在苹果树上，近景，聚集，插画风格
 一片火龙果田地，镜头下的火龙果树挂了几颗火龙果，插画风格，近景
 一串葡萄，插画风格，田园，近景
-一串草莓，插图风格，田园风景，近景
-一颗大西瓜，插画风格，背景在西瓜地，近景
 枇杷，绿叶，黄色枇杷，古代传统庭院，近景
 ```
 
-## 📁 项目结构
+---
 
-```
-ollama-image-generate-ui/
-├── app.py                    # Flask 主应用
-├── templates/
-│   ├── base.html            # 基础模板（导航栏）
-│   ├── index.html           # 图像生成页面
-│   └── gallery.html         # 画廊页面
-├── static/
-│   └── css/
-│       └── style.css        # 全局样式
-├── data/
-│   ├── images/              # 生成的图片保存目录
-│   └── history.json         # 历史记录
-├── .planning/               # 项目规划文件
-├── pyproject.toml           # 项目配置
-└── README.md               # 项目说明
-```
+## ⚙️ 配置
 
-## 🔧 配置选项
+| 配置项 | 默认值 | 说明 |
+|--------|--------|------|
+| 端口 | `8090` | 在 `app.py` 末尾修改 |
+| Ollama 地址 | `http://127.0.0.1:11434` | 环境变量 `OLLAMA_HOST` |
+| 历史记录上限 | 100 条 | 在 `app.py` 中修改 |
+| 图片尺寸 | 256-2048 | 必须是 64 的倍数 |
 
-### Ollama API 地址
-
-默认使用 `http://127.0.0.1:11434`，可通过环境变量修改：
-
-```bash
-export OLLAMA_HOST=http://192.168.1.100:11434
-uv run python app.py
-```
-
-### 图片尺寸限制
-
-- **最小**: 256 × 256
-- **最大**: 2048 × 2048
-- **步长**: 64
-
-### 历史记录
-
-- 自动保存最近 100 条生成记录
-- 历史记录保存在 `data/history.json`
-- 图片保存在 `data/images/` 目录
-
-## 🎯 API 端点
-
-### POST /api/generate
-
-生成新图片
-
-**请求体**:
-```json
-{
-  "prompt": "一颗苹果",
-  "model": "x/flux2-klein:9b",
-  "width": 768,
-  "height": 1024
-}
-```
-
-**响应**:
-```json
-{
-  "success": true,
-  "image_path": "/path/to/image.png",
-  "filename": "2026-02-14-00-22-17.png",
-  "duration": 53.2,
-  "timestamp": "2026-02-14-00-22-17"
-}
-```
-
-### GET /api/history
-
-获取生成历史
-
-**响应**:
-```json
-[
-  {
-    "timestamp": "2026-02-14-00-22-17",
-    "model": "x/flux2-klein:9b",
-    "width": 768,
-    "height": 1024,
-    "prompt": "一片火龙果田地...",
-    "image_path": "/path/to/image.png",
-    "duration": 53.2
-  }
-]
-```
-
-### GET /static/images/<filename>
-
-获取生成的图片
+---
 
 ## 🐛 故障排除
 
-### 找不到图片生成模型
+**问题：找不到模型**
+```bash
+# 检查已安装的模型
+ollama list
 
-确保：
-1. Ollama 服务正在运行 (`ollama serve`)
-2. 已安装 `x/` 开头的模型 (`ollama pull x/flux2-klein:9b`)
-3. 模型名称正确（区分大小写）
+# 重新拉取模型
+ollama pull x/flux2-klein:9b
+```
 
-### 无法连接到 Ollama API
+**问题：无法连接 Ollama**
+```bash
+# 测试 API 连通性
+curl http://127.0.0.1:11434/api/tags
 
-检查：
-1. Ollama 服务是否运行: `ps aux | grep ollama`
-2. API 地址是否正确: `curl http://127.0.0.1:11434/api/tags`
-3. 防火墙设置
+# 检查服务状态
+ps aux | grep ollama
+```
 
-### 画廊图片无法显示
-
-检查：
-1. `data/images/` 目录是否存在且有图片文件
-2. Flask 应用是否有权限读取该目录
-3. 浏览器控制台是否有错误信息
-
-## 📚 技术栈
-
-- **Flask**: Python Web 框架
-- **Jinja2**: 模板引擎
-- **Ollama**: 本地 LLM 推理和图片生成
-- **Pillow**: 图片处理
-- **Requests**: HTTP 请求
-- **HTML5/CSS3**: 响应式设计
-- **JavaScript**: 前端交互
-
-## 🚀 部署建议
-
-### 生产环境部署
-
-1. **使用生产级 WSGI 服务器**
-   ```bash
-   pip install gunicorn
-   gunicorn -w 4 -b 0.0.0.0:5000 app:app
-   ```
-
-2. **配置反向代理**（Nginx）
-   ```nginx
-   location / {
-       proxy_pass http://127.0.0.1:5000;
-       proxy_set_header Host $host;
-       proxy_set_header X-Real-IP $remote_addr;
-   }
-   ```
-
-3. **设置环境变量**
-   ```bash
-   export FLASK_ENV=production
-   export OLLAMA_HOST=http://127.0.0.1:11434
-   ```
+---
 
 ## 📄 许可证
 
 MIT License
+
+---
 
 ## 🤝 贡献
 

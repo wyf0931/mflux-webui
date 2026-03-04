@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Flask-based web UI for local AI image generation using Ollama. The application provides a clean, responsive interface for generating images from text prompts, with a gallery view for browsing historical generations.
+**Ollama WebUI for Image Generate** - Flask-based web UI for local AI image generation using Ollama. The application provides a clean, responsive interface for generating images from text prompts, with a gallery view for browsing historical generations.
 
 ## Development Commands
 
