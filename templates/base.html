@@ -254,6 +254,15 @@
         [data-theme="dark"] a[class*="bg-primary"]:hover {
             color: #ffffff !important;
         }
+
+        /* Hamburger button - always dark background with light icon */
+        .hamburger {
+            background-color: var(--nav-bg) !important;
+            color: #f0f6fc !important;
+        }
+        .hamburger:hover {
+            border-color: var(--accent-hover) !important;
+        }
     </style>
 </head>
 <body>
@@ -271,7 +280,7 @@
     <nav class="navbar sticky top-0 z-50">
         <div class="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between">
             <a href="/" class="nav-brand text-xl font-bold font-display text-text-primary hover:opacity-80 transition-opacity">
-                <span class="gradient-text">Ollama</span> WebUI
+                <span class="gradient-text">Ollama WebUI</span>
             </a>
 
             <!-- Desktop Menu -->
@@ -298,10 +307,10 @@
                 <button onclick="toggleTheme()" class="theme-toggle px-3 py-2 rounded-lg text-xl border-border hover:border-primary transition-all" title="切换主题">
                     <span id="themeIconMobile">🌙</span>
                 </button>
-                <button onclick="toggleMenu()" class="hamburger flex flex-col gap-1.5 p-2 border border-border rounded-lg">
-                    <span class="w-6 h-0.5 rounded transition-colors hover:bg-primary" style="background-color: var(--text-primary)"></span>
-                    <span class="w-6 h-0.5 rounded transition-colors hover:bg-primary" style="background-color: var(--text-primary)"></span>
-                    <span class="w-6 h-0.5 rounded transition-colors hover:bg-primary" style="background-color: var(--text-primary)"></span>
+                <button onclick="toggleMenu()" class="hamburger p-2 border border-border rounded-lg bg-bg-primary text-text-primary hover:text-primary hover:border-primary transition-all" title="菜单">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                    </svg>
                 </button>
             </div>
         </div>
