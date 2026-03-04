@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}生图 - Oh My Agent{% endblock %}
+
+{% block content %}
+<div class="max-w-[1200px] mx-auto">
+    <!-- Two Column Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:items-start">
+        <!-- Form -->
+        <form id="generateForm" class="w-full">
+            <div class="bg-bg-secondary border border-border rounded-2xl p-8 shadow-md">
+                <!-- Model Settings Section -->
+                <div class="mb-8">
+                    <h3 class="text-xs uppercase tracking-wider text-text-muted font-semibold mb-4">模型设置</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="flex flex-col">
+                            <label for="model" class="mb-2 font-medium text-text-secondary text-sm">AI 模型</label>
+                            <select id="model" name="model" required class="px-4 py-3 border border-border rounded-lg bg-input-bg text-sm font-sans transition-all focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary-glow">
+                                <option value="x/flux2-klein:9b">Flux 2 Klein</option>
+                                <option value="x/z-image-turbo:fp8">Z Image Turbo</option>
+                            </select>
+                        </div>
+
+                        <div class="flex flex-col">
+                            <label for="width" class="mb-2 font-medium text-text-secondary text-sm">宽度</label>
+                            <input type="number" id="width" name="width" value="768" min="256" max="2048" step="64" required class="px-4 py-3 border border-border rounded-lg bg-input-bg text-sm font-sans transition-all focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary-glow">
+                        </div>
+
+                        <div class="flex flex-col">
+                            <label for="height" class="mb-2 font-medium text-text-secondary text-sm">高度</label>
+                            <input type="number" id="height" name="height" value="1024" min="256" max="2048" step="64" required class="px-4 py-3 border border-border rounded-lg bg-input-bg text-sm font-sans transition-all focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary-glow">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Prompt Section -->
+                <div class="mb-6">
+                    <h3 class="text-xs uppercase tracking-wider text-text-muted font-semibold mb-4">提示词</h3>
+                    <div class="flex flex-col">
+                        <textarea id="prompt" name="prompt" rows="5" placeholder="描述你想要生成的图像..." required class="px-4 py-3 border border-border rounded-lg bg-input-bg text-sm font-sans leading-relaxed transition-all focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary-glow resize-y min-h-[120px]">纹理清晰，不要印章，不要文字，不要题字
+</textarea>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" id="generateBtn" class="w-full flex items-center justify-center gap-2 px-8 py-3 bg-primary text-white rounded-lg font-semibold text-sm hover:bg-primary-hover hover:-translate-y-0.5 hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0">
+                    <span class="btn-text">生成图像</span>
+                    <span class="btn-icon text-lg">✨</span>
+                </button>
+            </div>
+        </form>
+
+        <!-- Result -->
+        <div id="result" class="hidden animate-slideUp">
+            <div class="bg-bg-secondary border border-border rounded-2xl overflow-hidden shadow-md">
+                <!-- Result Header -->
+                <div class="flex items-center justify-between px-6 py-5 border-b border-border-light">
+                    <h3 class="text-lg font-display font-semibold text-text-secondary m-0">生成结果</h3>
+                    <span id="resultBadge" class="px-3 py-1 bg-primary text-white text-xs font-semibold rounded-full">完成</span>
+                </div>
+
+                <!-- Result Image -->
+                <div class="p-6 bg-bg-tertiary flex items-center justify-center">
+                    <img id="resultImage" src="" alt="Generated Image" class="max-w-full max-h-[600px] rounded-xl shadow-lg">
+                </div>
+
+                <!-- Result Meta -->
+                <div class="p-5 grid gap-4">
+                    <div class="flex items-center justify-between p-3 bg-bg-tertiary rounded-lg">
+                        <span class="text-xs text-text-muted font-medium">文件名</span>
+                        <span id="resultFilename" class="text-sm text-text-secondary font-semibold"></span>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-bg-tertiary rounded-lg">
+                        <span class="text-xs text-text-muted font-medium">生成时间</span>
+                        <span id="resultDuration" class="text-sm text-text-secondary font-semibold"></span>
+                    </div>
+                    <div class="flex items-center justify-between p-3 bg-bg-tertiary rounded-lg">
+                        <span class="text-xs text-text-muted font-medium">时间戳</span>
+                        <span id="resultTimestamp" class="text-sm text-text-secondary font-semibold"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Toast -->
+    <div id="error" class="fixed bottom-6 right-6 hidden bg-red-500 text-white px-6 py-4 rounded-xl shadow-lg animate-slideIn max-w-[400px]"></div>
+</div>
+
+<style>
+    /* Loading State */
+    .loading {
+        position: relative;
+        color: transparent;
+    }
+
+    .loading .btn-text {
+        opacity: 0;
+    }
+
+    .loading::after {
+        content: '';
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        border: 2px solid rgba(255,255,255,0.3);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateX(100%);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    /* Mobile Responsive Adjustments */
+    @media (max-width: 768px) {
+        .result-image-wrapper img {
+            max-height: 400px;
+        }
+    }
+</style>
+
+<script>
+    const form = document.getElementById('generateForm');
+    const generateBtn = document.getElementById('generateBtn');
+    const resultDiv = document.getElementById('result');
+    const errorDiv = document.getElementById('error');
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        resultDiv.classList.add('hidden');
+        errorDiv.classList.add('hidden');
+
+        const formData = new FormData(form);
+        const data = {
+            prompt: formData.get('prompt'),
+            model: formData.get('model'),
+            width: parseInt(formData.get('width')),
+            height: parseInt(formData.get('height'))
+        };
+
+        generateBtn.disabled = true;
+        generateBtn.classList.add('loading');
+        generateBtn.querySelector('.btn-text').textContent = '生成中...';
+
+        try {
+            const response = await fetch('/api/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                document.getElementById('resultImage').src = '/static/images/' + result.filename;
+                document.getElementById('resultFilename').textContent = result.filename;
+                document.getElementById('resultDuration').textContent = result.duration.toFixed(2) + ' 秒';
+                document.getElementById('resultTimestamp').textContent = result.timestamp;
+                resultDiv.classList.remove('hidden');
+                document.getElementById('prompt').value = '';
+            } else {
+                errorDiv.textContent = result.error || '生成失败';
+                errorDiv.classList.remove('hidden');
+                setTimeout(() => {
+                    errorDiv.classList.add('hidden');
+                }, 5000);
+            }
+        } catch (error) {
+            errorDiv.textContent = '网络错误: ' + error.message;
+            errorDiv.classList.remove('hidden');
+            setTimeout(() => {
+                errorDiv.classList.add('hidden');
+            }, 5000);
+        } finally {
+            generateBtn.disabled = false;
+            generateBtn.classList.remove('loading');
+            generateBtn.querySelector('.btn-text').textContent = '生成图像';
+        }
+    });
+</script>
+{% endblock %}

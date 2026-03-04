@@ -1,0 +1,389 @@
+[
+  {
+    "timestamp": "2026-03-04-17-36-48",
+    "model": "x/z-image-turbo:fp8",
+    "width": 768,
+    "height": 1024,
+    "prompt": "喜上眉梢，宣纸，中国传统花鸟画，工笔\n",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-03-04-17-36-48.png",
+    "duration": 52.198437333
+  },
+  {
+    "timestamp": "2026-03-04-17-33-53",
+    "model": "x/z-image-turbo:fp8",
+    "width": 768,
+    "height": 1024,
+    "prompt": "参考下面的日历布局和信息，输出一张日历图，白色背景。\n      March 2026\nSu Mo Tu We Th Fr Sa\n  1  2  3  4  5  6  7\n  8  9 10 11 12 13 14\n 15 16 17 18 19 20 21\n 22 23 24 25 26 27 28\n 29 30 31",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-03-04-17-33-53.png",
+    "duration": 52.73078925
+  },
+  {
+    "timestamp": "2026-02-25-00-14-13",
+    "model": "x/flux2-klein:9b",
+    "width": 768,
+    "height": 1024,
+    "prompt": "纹理清晰，不要印章，不要文字，不要题字，一株杜鹃花，中国传统花鸟画，线稿图，中景构图，平视\n",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-25-00-14-13.png",
+    "duration": 50.417820125
+  },
+  {
+    "timestamp": "2026-02-24-08-49-27",
+    "model": "x/flux2-klein:9b",
+    "width": 768,
+    "height": 1024,
+    "prompt": "纹理清晰，不要印章，不要文字，不要题字，一株杜鹃花，中国传统黑白水墨画，写意画，中景构图，平视\n",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-24-08-49-27.png",
+    "duration": 44.358309125
+  },
+  {
+    "timestamp": "2026-02-24-08-40-20",
+    "model": "x/flux2-klein:9b",
+    "width": 768,
+    "height": 1024,
+    "prompt": "纹理清晰，不要印章，不要文字，不要题字，一只喜鹊，站在树枝上，仰视角度，中景，中国传统写意画，花鸟画，宣纸",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-24-08-40-20.png",
+    "duration": 44.698905917
+  },
+  {
+    "timestamp": "2026-02-24-08-37-17",
+    "model": "x/flux2-klein:9b",
+    "width": 768,
+    "height": 1024,
+    "prompt": "纹理清晰，不要印章，不要文字，不要题字，一只喜鹊，站在树枝上，仰视角度，中景，中国传统工笔画，花鸟画，宣纸",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-24-08-37-17.png",
+    "duration": 44.661831333
+  },
+  {
+    "timestamp": "2026-02-24-08-30-47",
+    "model": "x/flux2-klein:9b",
+    "width": 768,
+    "height": 1024,
+    "prompt": "纹理清晰，不要印章，不要文字，不要题字，一只喜鹊，站在树枝上，仰视角度，近景，中国传统工笔画，花鸟画，宣纸\n",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-24-08-30-47.png",
+    "duration": 44.387307
+  },
+  {
+    "timestamp": "2026-02-24-08-25-40",
+    "model": "x/flux2-klein:9b",
+    "width": 768,
+    "height": 1024,
+    "prompt": "国风工笔画，醒染法，芭蕉图，一支，开阔的叶片，高清画质，近景，宣纸\n负面：不要文字，不要印章 \n正面：纹理清晰",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-24-08-25-40.png",
+    "duration": 45.357285917
+  },
+  {
+    "timestamp": "2026-02-24-08-24-19",
+    "model": "x/flux2-klein:9b",
+    "width": 768,
+    "height": 1024,
+    "prompt": "国风工笔画，统染法，芭蕉图，一支，开阔的叶片，高清画质，近景，宣纸\n负面：不要文字，不要印章 \n正面：纹理清晰",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-24-08-24-19.png",
+    "duration": 44.645497125
+  },
+  {
+    "timestamp": "2026-02-24-08-22-24",
+    "model": "x/flux2-klein:9b",
+    "width": 768,
+    "height": 1024,
+    "prompt": "国风工笔画，芭蕉图，一支，开阔的叶片，高清画质，近景，宣纸 负面：不要文字，不要印章 正面：纹理清晰",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-24-08-22-24.png",
+    "duration": 44.570195667
+  },
+  {
+    "timestamp": "2026-02-24-08-19-55",
+    "model": "x/flux2-klein:9b",
+    "width": 768,
+    "height": 1024,
+    "prompt": "国风工笔画，枇杷图，一支，高清画质，近景，宣纸 负面：不要文字，不要印章 正面：纹理清晰",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-24-08-19-55.png",
+    "duration": 49.623388125
+  },
+  {
+    "timestamp": "2026-02-24-01-39-20",
+    "model": "x/z-image-turbo:fp8",
+    "width": 768,
+    "height": 1024,
+    "prompt": "国风工笔画，荷花图，一支，高清画质，近景，宣纸 \n负面：不要文字，不要印章\n正面：纹理清晰",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-24-01-39-20.png",
+    "duration": 50.070309208
+  },
+  {
+    "timestamp": "2026-02-24-01-36-57",
+    "model": "x/z-image-turbo:fp8",
+    "width": 768,
+    "height": 1024,
+    "prompt": "国风工笔画，荷花图，一支，高清画质，近景，宣纸 \n负面：不要文字，不要印章",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-24-01-36-57.png",
+    "duration": 52.807451625
+  },
+  {
+    "timestamp": "2026-02-23-15-04-52",
+    "model": "x/flux2-klein:9b",
+    "width": 768,
+    "height": 1024,
+    "prompt": "国风工笔画，荷花图，一支，高清画质，近景，宣纸 \n负面：不要文字，不要印章",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-23-15-04-52.png",
+    "duration": 48.469711625
+  },
+  {
+    "timestamp": "2026-02-23-11-23-36",
+    "model": "x/flux2-klein:9b",
+    "width": 768,
+    "height": 1024,
+    "prompt": "国风工笔画，荷花图，宋代，高清画质，近景，宣纸\n\n负面：不要文字，不要印章",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-23-11-23-36.png",
+    "duration": 76.306325916
+  },
+  {
+    "timestamp": "2026-02-22-05-03-49",
+    "model": "x/flux2-klein:9b",
+    "width": 768,
+    "height": 1024,
+    "prompt": "中国花鸟画，工笔画，宋代，一支飞黄玉兰花，宣纸上，罩染，不要印章，不要任何文字。画面布局 从右下角伸入画面，一朵花开了，另外两个含苞待放，花瓣带点浅浅的淡黄色，交错排列，枝条纤细，仰视角度。色调淡雅和谐。",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-22-05-03-49.png",
+    "duration": 75.660192667
+  },
+  {
+    "timestamp": "2026-02-22-04-57-23",
+    "model": "x/flux2-klein:9b",
+    "width": 768,
+    "height": 1024,
+    "prompt": "中国花鸟画，工笔画，宋代，一支飞黄玉兰花，有三朵，宣纸上，罩染，不要印章，不要任何文字。画面布局 从右侧伸入画面，一朵花开了，另外两个含苞待放，交错排列，枝条纤细，仰视角度。",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-22-04-57-23.png",
+    "duration": 72.301493625
+  },
+  {
+    "timestamp": "2026-02-22-04-55-09",
+    "model": "x/flux2-klein:9b",
+    "width": 768,
+    "height": 1024,
+    "prompt": "中国花鸟画，工笔画，宋代，一支飞黄玉兰花，有三朵，白绿色花瓣，宣纸上，罩染，不要印章，不要任何文字。画面布局 从右侧伸入画面，一朵花开了，另外两个含苞待放，交错排列，仰视角度。",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-22-04-55-09.png",
+    "duration": 72.245212375
+  },
+  {
+    "timestamp": "2026-02-22-04-53-11",
+    "model": "x/flux2-klein:9b",
+    "width": 768,
+    "height": 1024,
+    "prompt": "中国花鸟画，工笔画，宋代，一支飞黄玉兰花，有三朵，白绿色花瓣，宣纸上，罩染，不要印章，不要任何文字。画面布局 从右侧伸入画面，一朵花开了，另外两个含苞待放，交错排列，仰视角度。",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-22-04-53-11.png",
+    "duration": 72.062909959
+  },
+  {
+    "timestamp": "2026-02-22-04-48-36",
+    "model": "x/flux2-klein:9b",
+    "width": 768,
+    "height": 1024,
+    "prompt": "中国花鸟画，工笔画，宋代，一支飞黄玉兰花，有三朵，白绿色花瓣，宣纸上，罩染，不要印章，不要任何文字。画面布局 从右侧伸入画面，一朵花开了，另外两个花苞，尚未开放",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-22-04-48-36.png",
+    "duration": 74.554409208
+  },
+  {
+    "timestamp": "2026-02-22-02-05-35",
+    "model": "x/flux2-klein:9b",
+    "width": 768,
+    "height": 1024,
+    "prompt": "中国花鸟画，工笔画，宋代，一支玉兰花，三朵，淡紫色花瓣，勾线，无印章，无任何文字。画面布局 从右侧伸入画面，一朵花开了，另外两个花苞，尚未开放。",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-22-02-05-35.png",
+    "duration": 44.6574405
+  },
+  {
+    "timestamp": "2026-02-22-02-03-27",
+    "model": "x/flux2-klein:9b",
+    "width": 768,
+    "height": 1024,
+    "prompt": "中国花鸟画，工笔画，宋代，一支玉兰花，三朵，淡紫色花瓣，宣纸上，醒染，无印章，无任何文字。画面布局 从右侧伸入画面，一朵花开了，另外两个花苞，尚未开放。",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-22-02-03-27.png",
+    "duration": 47.766527667
+  },
+  {
+    "timestamp": "2026-02-22-01-51-31",
+    "model": "x/z-image-turbo:fp8",
+    "width": 768,
+    "height": 1024,
+    "prompt": "中国花鸟画，工笔画，宋代，一支玉兰花，三朵，白色花瓣，宣纸上，罩染，无印章，无任何文字。画面布局 从右侧伸入画面，一朵花开了，另外两个花苞，尚未开放",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-22-01-51-31.png",
+    "duration": 54.86778475
+  },
+  {
+    "timestamp": "2026-02-22-01-48-09",
+    "model": "x/flux2-klein:9b",
+    "width": 768,
+    "height": 1024,
+    "prompt": "中国传统绘画，工笔画，花鸟画，一支玉兰花，三朵，白色花瓣，宣纸上，罩染，无印章，无题字",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-22-01-48-09.png",
+    "duration": 44.6502655
+  },
+  {
+    "timestamp": "2026-02-22-01-43-32",
+    "model": "x/flux2-klein:9b",
+    "width": 768,
+    "height": 1024,
+    "prompt": "中国传统绘画，工笔，玉兰花，白色，宣纸上，罩染，一枝玉兰花",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-22-01-43-32.png",
+    "duration": 47.775218834
+  },
+  {
+    "timestamp": "2026-02-15-23-59-12",
+    "model": "x/z-image-turbo:fp8",
+    "width": 768,
+    "height": 1024,
+    "prompt": "中国传统花鸟画，宋代工笔画法，近景，一支杨梅。\n不要题字，不要印章。",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-15-23-59-12.png",
+    "duration": 47.170120667
+  },
+  {
+    "timestamp": "2026-02-15-23-57-16",
+    "model": "x/flux2-klein:9b",
+    "width": 768,
+    "height": 1024,
+    "prompt": "中国传统花鸟画，宋代工笔画法，近景，一支杨梅。\n不要题字，不要印章。",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-15-23-57-16.png",
+    "duration": 53.035118833
+  },
+  {
+    "timestamp": "2026-02-15-23-13-42",
+    "model": "x/flux2-klein:9b",
+    "width": 768,
+    "height": 1024,
+    "prompt": "中国传统水墨画，一支枇杷，几颗枇杷果，黄色，近景。\n不要题字，不要印章。",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-15-23-13-42.png",
+    "duration": 46.127416
+  },
+  {
+    "timestamp": "2026-02-15-23-10-25",
+    "model": "x/flux2-klein:9b",
+    "width": 768,
+    "height": 1024,
+    "prompt": "中国传统，水墨画，湿墨法，一支荷花，近景，一片荷叶",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-15-23-10-25.png",
+    "duration": 53.912030792
+  },
+  {
+    "timestamp": "2026-02-15-00-33-45",
+    "model": "x/flux2-klein:9b",
+    "width": 768,
+    "height": 1024,
+    "prompt": "插画风，中国传统古代人物，一个，对面远处的两座大山，一个写着太行，一个写着王屋，挡住了村里出去的路。宏观视角",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-15-00-33-45.png",
+    "duration": 57.002895291
+  },
+  {
+    "timestamp": "2026-02-15-00-30-07",
+    "model": "x/flux2-klein:9b",
+    "width": 768,
+    "height": 1024,
+    "prompt": "插画风，中国传统古代小孩，两个，面对面，其中一个手指头顶的太阳，在辩论，宏观视角",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-15-00-30-07.png",
+    "duration": 53.869291
+  },
+  {
+    "timestamp": "2026-02-15-00-28-09",
+    "model": "x/z-image-turbo:fp8",
+    "width": 768,
+    "height": 1024,
+    "prompt": "插画风，中国传统古代小孩，两个，面对面，其中一个手指头顶的太阳，在辩论。宏观视角",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-15-00-28-09.png",
+    "duration": 56.84126975
+  },
+  {
+    "timestamp": "2026-02-15-00-25-56",
+    "model": "x/flux2-klein:9b",
+    "width": 768,
+    "height": 1024,
+    "prompt": "插画风，中国传统古代小孩，两个，面对面，其中一个手指太阳，在辩论。宏观视角",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-15-00-25-56.png",
+    "duration": 58.884093542
+  },
+  {
+    "timestamp": "2026-02-15-00-23-23",
+    "model": "x/z-image-turbo:fp8",
+    "width": 768,
+    "height": 1024,
+    "prompt": "插图风，一颗火龙果树，背景是一片火龙果园，近景，一颗火龙果挂在火龙果树上",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-15-00-23-23.png",
+    "duration": 57.743988125
+  },
+  {
+    "timestamp": "2026-02-15-00-17-43",
+    "model": "x/z-image-turbo:fp8",
+    "width": 768,
+    "height": 1024,
+    "prompt": "插图风，一颗梨树，背景是一片梨园，近景，一颗梨挂在梨树上",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-15-00-17-43.png",
+    "duration": 60.385331459
+  },
+  {
+    "timestamp": "2026-02-14-23-47-06",
+    "model": "x/flux2-klein:9b",
+    "width": 768,
+    "height": 1024,
+    "prompt": "历史图片（提示词未保存）",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-14-23-47-06.png",
+    "duration": 0.0
+  },
+  {
+    "timestamp": "2026-02-14-01-37-21",
+    "model": "x/flux2-klein:9b",
+    "width": 768,
+    "height": 1024,
+    "prompt": "历史图片（提示词未保存）",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-14-01-37-21.png",
+    "duration": 0.0
+  },
+  {
+    "timestamp": "2026-02-14-00-22-17",
+    "model": "x/flux2-klein:9b",
+    "width": 768,
+    "height": 1024,
+    "prompt": "历史图片（提示词未保存）",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-14-00-22-17.png",
+    "duration": 0.0
+  },
+  {
+    "timestamp": "2026-02-14-00-02-58",
+    "model": "x/flux2-klein:9b",
+    "width": 768,
+    "height": 1024,
+    "prompt": "历史图片（提示词未保存）",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-14-00-02-58.png",
+    "duration": 0.0
+  },
+  {
+    "timestamp": "2026-02-13-23-55-55",
+    "model": "x/flux2-klein:9b",
+    "width": 768,
+    "height": 1024,
+    "prompt": "历史图片（提示词未保存）",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-13-23-55-55.png",
+    "duration": 0.0
+  },
+  {
+    "timestamp": "2026-02-13-23-44-11",
+    "model": "x/flux2-klein:9b",
+    "width": 768,
+    "height": 1024,
+    "prompt": "历史图片（提示词未保存）",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-13-23-44-11.png",
+    "duration": 0.0
+  },
+  {
+    "timestamp": "2026-02-13-20-51-22",
+    "model": "x/flux2-klein:9b",
+    "width": 768,
+    "height": 1024,
+    "prompt": "历史图片（提示词未保存）",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-13-20-51-22.png",
+    "duration": 0.0
+  },
+  {
+    "timestamp": "2026-02-13-15-05-47",
+    "model": "x/flux2-klein:9b",
+    "width": 768,
+    "height": 1024,
+    "prompt": "历史图片（提示词未保存）",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-02-13-15-05-47.png",
+    "duration": 0.0
+  }
+]
