@@ -23,7 +23,30 @@ IMAGES_DIR.mkdir(parents=True, exist_ok=True)
 HISTORY_FILE = Path(__file__).parent / "data" / "history.json"
 HISTORY_FILE.parent.mkdir(parents=True, exist_ok=True)
 
-OLLAMA_HOST = os.environ.get('OLLAMA_HOST', 'http://127.0.0.1:11434')
+SETTINGS_FILE = Path(__file__).parent / "data" / "settings.json"
+SETTINGS_FILE.parent.mkdir(parents=True, exist_ok=True)
+
+
+def load_settings():
+    """加载设置配置，如果不存在返回默认值"""
+    default_settings = {
+        'ollamaUrl': 'http://127.0.0.1:11434'
+    }
+    if SETTINGS_FILE.exists():
+        with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
+            return {**default_settings, **json.load(f)}
+    return default_settings
+
+
+def save_settings(settings):
+    """保存设置配置"""
+    with open(SETTINGS_FILE, 'w', encoding='utf-8') as f:
+        json.dump(settings, f, ensure_ascii=False, indent=2)
+
+
+# 从设置文件或环境变量加载 Ollama 地址
+settings = load_settings()
+OLLAMA_HOST = os.environ.get('OLLAMA_HOST', settings.get('ollamaUrl', 'http://127.0.0.1:11434'))
 if not OLLAMA_HOST.startswith('http'):
     OLLAMA_HOST = f'http://{OLLAMA_HOST}'
 OLLAMA_HOST = OLLAMA_HOST.replace('0.0.0.0', '127.0.0.1')
@@ -57,6 +80,12 @@ def gallery():
     """画廊页面"""
     history = load_history()
     return render_template('gallery.html', images=history)
+
+
+@app.route('/settings')
+def settings():
+    """设置页面"""
+    return render_template('settings.html')
 
 
 @app.route('/api/generate', methods=['POST'])
@@ -179,6 +208,40 @@ def delete_image(timestamp):
     except Exception as e:
         print(f"删除失败: {e}")
         return jsonify({'error': f'删除失败: {str(e)}'}), 500
+
+
+@app.route('/api/settings', methods=['GET'])
+def get_settings():
+    """API: 获取当前设置"""
+    settings = load_settings()
+    return jsonify(settings)
+
+
+@app.route('/api/settings', methods=['POST'])
+def update_settings():
+    """API: 更新设置"""
+    try:
+        data = request.json
+        ollamaUrl = data.get('ollamaUrl', '').strip()
+
+        if not ollamaUrl:
+            return jsonify({'error': 'Ollama URL 不能为空'}), 400
+
+        # 验证并格式化 URL
+        if not ollamaUrl.startswith('http://') and not ollamaUrl.startswith('https://'):
+            ollamaUrl = f'http://{ollamaUrl}'
+
+        # 加载当前设置并更新
+        settings = load_settings()
+        settings['ollamaUrl'] = ollamaUrl
+        save_settings(settings)
+
+        print(f"设置已更新: ollamaUrl = {ollamaUrl}")
+        return jsonify({'success': True, 'settings': settings})
+
+    except Exception as e:
+        print(f"保存设置失败: {e}")
+        return jsonify({'error': f'保存设置失败: {str(e)}'}), 500
 
 
 if __name__ == '__main__':
