@@ -5,15 +5,15 @@
 {% block content %}
 <div class="max-w-[1400px] mx-auto">
     <!-- Filter Bar -->
-    <div class="flex items-center gap-3 mb-8">
+    <div class="flex items-center gap-3 mb-8 flex-wrap sm:flex-nowrap">
         <span class="text-sm text-text-muted">筛选:</span>
         <div class="flex gap-2 flex-wrap">
-            <button onclick="toggleFilter('z-image-turbo')" class="filter-tag active flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all cursor-pointer border border-transparent" data-filter="z-image-turbo">
+            <button onclick="toggleFilter('z-image-turbo')" class="filter-tag active flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium cursor-pointer" data-filter="z-image-turbo">
                 <span class="text-sm">⚡</span>
                 <span>Z Image Turbo</span>
                 <span class="check-icon opacity-0 transition-opacity">✓</span>
             </button>
-            <button onclick="toggleFilter('flux2-klein')" class="filter-tag active flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all cursor-pointer border border-transparent" data-filter="flux2-klein">
+            <button onclick="toggleFilter('flux2-klein')" class="filter-tag active flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium cursor-pointer" data-filter="flux2-klein">
                 <span class="text-sm">✨</span>
                 <span>Flux 2 Klein</span>
                 <span class="check-icon opacity-0 transition-opacity">✓</span>
@@ -28,11 +28,11 @@
             {% set model_key = 'z-image-turbo' if 'z-image-turbo' in image.model else 'flux2-klein' %}
             <div class="gallery-card bg-bg-secondary border border-border rounded-2xl overflow-hidden shadow-md hover:-translate-y-1 hover:shadow-lg transition-all duration-300 animate-scaleIn" data-timestamp="{{ image.timestamp }}" data-model="{{ model_key }}" style="animation-delay: {{ loop.index * 0.05 }}s">
                 <!-- Image Wrapper -->
-                <div class="relative w-full overflow-hidden bg-bg-tertiary">
+                <div class="relative w-full overflow-hidden bg-bg-tertiary group">
                     <a href="/static/images/{{ image.timestamp }}.png" target="_blank" class="block">
                         <img src="/static/images/{{ image.timestamp }}.png" alt="{{ image.prompt }}" loading="lazy" class="w-full h-auto object-cover transition-transform duration-300 hover:scale-105">
                     </a>
-                    <button onclick="confirmDelete('{{ image.timestamp }}')" class="delete-btn absolute top-3 right-3 w-9 h-9 p-0 bg-red-500/95 text-white border-none rounded-xl flex items-center justify-center opacity-0 scale-90 transition-all duration-200 hover:bg-red-600 hover:scale-100 shadow-lg" title="删除图片">
+                    <button onclick="confirmDelete('{{ image.timestamp }}')" class="delete-btn absolute top-3 right-3 w-9 h-9 p-0 bg-red-500/95 text-white border-none rounded-xl flex items-center justify-center opacity-0 scale-90 transition-all duration-200 hover:bg-red-600 hover:scale-100 shadow-lg sm:group-hover:opacity-100 sm:group-hover:scale-100 lg:opacity-0 lg:scale-90" title="删除图片">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
                         </svg>
@@ -61,100 +61,6 @@
         {% endif %}
     </div>
 </div>
-
-<style>
-    /* Filter Tags */
-    .filter-tag {
-        background: var(--bg-tertiary);
-        color: var(--text-muted);
-        border: 1px solid var(--border-light);
-    }
-
-    .filter-tag:hover {
-        background: var(--bg-elevated);
-        color: var(--text-secondary);
-    }
-
-    .filter-tag.active {
-        background: var(--accent-primary);
-        color: white;
-        border-color: var(--accent-primary);
-        box-shadow: 0 2px 8px var(--accent-glow);
-    }
-
-    .filter-tag.active .check-icon {
-        opacity: 1;
-    }
-
-    .filter-tag:has(.check-icon[style*="opacity: 1"]) {
-        background: var(--accent-primary);
-        color: white;
-        border-color: var(--accent-primary);
-        box-shadow: 0 2px 8px var(--accent-glow);
-    }
-
-    /* Show delete button on hover for desktop */
-    @media (min-width: 769px) {
-        .gallery-card:hover .delete-btn {
-            opacity: 1;
-            transform: scale(1);
-        }
-    }
-
-    /* Always show delete button on mobile */
-    @media (max-width: 768px) {
-        .delete-btn {
-            opacity: 1 !important;
-            top: 8px;
-            right: 8px;
-            width: 32px;
-            height: 32px;
-        }
-
-        .filter-bar {
-            padding: 16px;
-            margin-bottom: 20px;
-        }
-
-        .filter-label {
-            font-size: 0.85rem;
-            width: 100%;
-            margin-bottom: 8px;
-        }
-
-        .filter-group {
-            width: 100%;
-            justify-content: space-between;
-        }
-
-        .filter-btn {
-            flex: 1;
-            justify-content: center;
-            padding: 10px 12px;
-            font-size: 0.8rem;
-        }
-
-        .filter-icon {
-            font-size: 0.9rem;
-        }
-
-        .gallery-grid {
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            gap: 16px;
-        }
-
-        .meta-tag {
-            font-size: 0.7rem;
-            padding: 3px 8px;
-        }
-    }
-
-    @media (max-width: 480px) {
-        .gallery-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-</style>
 
 <script>
     function confirmDelete(timestamp) {
