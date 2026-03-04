@@ -1,5 +1,5 @@
 [project]
-name = "ollama-image-generate-ui"
+name = "ollama-webui-image-generate"
 version = "0.1.0"
 description = "Ollama WebUI for Image Generate - Flask-based UI for local AI image generation"
 readme = "README.md"
