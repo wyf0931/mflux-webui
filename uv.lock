@@ -247,7 +247,7 @@ wheels = [
 ]
 
 [[package]]
-name = "ollama-image-generate-ui"
+name = "ollama-webui-image-generate"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
