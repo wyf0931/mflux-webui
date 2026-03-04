@@ -12,3 +12,8 @@ logs/
 *.log
 CLAUDE.md
 .planning/*
+
+# Data files
+data/*.json
+data/images/*.png
+!data/images/.gitkeep
