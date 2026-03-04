@@ -35,13 +35,12 @@ Ollama 是优秀的本地 LLM 运行工具，但它缺乏图像生成的可视�
 ## 🖼️ 界面预览
 
 ### PC 端
-![PC端界面](./docs/images/webui-pc.png)
-
+![PC端界面](https://s1.imagehub.cc/images/2026/03/05/f9ad6fc5e9841360c437357069a00be5.png)
 ### 移动端
 
 <div align="center">
-  <img src="./docs/images/webui-mobile-form-light.png" alt="移动端浅色模式" width="300">
-  <img src="./docs/images/webui-mobile-dark.png" alt="移动端深色模式" width="300">
+  <img src="https://s1.imagehub.cc/images/2026/03/05/54e9aed7d04eed0fc1475e08c879ad15.png" alt="移动端浅色模式" width="300">
+  <img src="https://s1.imagehub.cc/images/2026/03/05/11428ccd02bb45c2f0c6395746bb6eb4.png" alt="移动端深色模式" width="300">
 </div>
 
 ---
