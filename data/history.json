@@ -1,5 +1,23 @@
 [
   {
+    "timestamp": "2026-03-05-00-13-29",
+    "model": "x/z-image-turbo:fp8",
+    "width": 768,
+    "height": 1024,
+    "prompt": "大鹏展翅图，中国画，传统水彩画，宣纸，纹理清晰，不要印章，不要文字，不要题字\n",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-03-05-00-13-29.png",
+    "duration": 48.321991625
+  },
+  {
+    "timestamp": "2026-03-05-00-11-18",
+    "model": "x/z-image-turbo:fp8",
+    "width": 768,
+    "height": 1024,
+    "prompt": "凤凰展翅图，中国画，传统水彩画，宣纸，纹理清晰，不要印章，不要文字，不要题字\n",
+    "image_path": "/Users/scott/Documents/codes/opensource/ollama-image-generate-ui/data/images/2026-03-05-00-11-18.png",
+    "duration": 52.882062458
+  },
+  {
     "timestamp": "2026-03-04-17-36-48",
     "model": "x/z-image-turbo:fp8",
     "width": 768,

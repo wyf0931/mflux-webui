@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}设置 - Ollama WebUI{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto p-6">
+    <h1 class="text-3xl font-bold mb-8 text-text-primary">设置</h1>
+
+    <form id="settingsForm" class="space-y-6">
+        <!-- Ollama URL Setting -->
+        <div class="bg-bg-secondary rounded-xl p-6 border border-border">
+            <h2 class="text-xl font-semibold mb-4 text-text-secondary">Ollama 服务地址</h2>
+            <div class="space-y-3">
+                <label class="block text-sm text-text-secondary">
+                    API 地址
+                </label>
+                <input type="text" id="ollamaUrl" name="ollamaUrl"
+                       placeholder="http://127.0.0.1:11434"
+                       class="w-full px-4 py-2 rounded-lg border border-border bg-input-bg text-input-text focus:outline-none focus:border-primary transition-colors">
+                <p class="text-sm text-text-muted">
+                    Ollama API 服务地址。默认: http://127.0.0.1:11434
+                </p>
+            </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex gap-4">
+            <button type="submit" class="px-6 py-2 rounded-lg bg-primary text-white hover:bg-primary-hover transition-colors">
+                保存设置
+            </button>
+            <a href="/" class="px-6 py-2 rounded-lg border border-border hover:border-primary transition-colors">
+                取消
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+// Load and save settings
+async function loadSettings() {
+    try {
+        const response = await fetch('/api/settings');
+        const settings = await response.json();
+        document.getElementById('ollamaUrl').value = settings.ollamaUrl || '';
+    } catch (error) {
+        console.error('Failed to load settings:', error);
+    }
+}
+
+document.getElementById('settingsForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const ollamaUrl = document.getElementById('ollamaUrl').value.trim();
+
+    if (!ollamaUrl) {
+        alert('Ollama URL 不能为空');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ollamaUrl })
+        });
+
+        if (response.ok) {
+            alert('设置已保存，重启应用后生效');
+            window.location.href = '/';
+        } else {
+            const error = await response.json();
+            alert('保存失败: ' + (error.error || '未知错误'));
+        }
+    } catch (error) {
+        alert('保存失败: ' + error.message);
+    }
+});
+
+loadSettings();
+</script>
+{% endblock %}
