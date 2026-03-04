@@ -1,7 +1,7 @@
 [project]
 name = "ollama-image-generate-ui"
 version = "0.1.0"
-description = "Ollama image generation UI with Flask"
+description = "Ollama WebUI for Image Generate - Flask-based UI for local AI image generation"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
