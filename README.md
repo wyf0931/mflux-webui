@@ -83,6 +83,36 @@ uv run python app.py
 open http://127.0.0.1:8090
 ```
 
+### 使用 Docker 运行
+
+```bash
+# 1. 构建镜像
+docker build -t ollama-webui .
+
+# 2. 运行容器
+docker run -d \
+  --name ollama-webui \
+  -p 8090:8090 \
+  -e OLLAMA_HOST=http://host.docker.internal:11434 \
+  -v $(pwd)/data:/app/data \
+  ollama-webui
+
+# 3. 浏览器访问
+open http://127.0.0.1:8090
+```
+
+**环境变量：**
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `OLLAMA_HOST` | `http://host.docker.internal:11434` | Ollama API 地址 |
+| `PORT` | `8090` | 应用端口 |
+| `FLASK_ENV` | `production` | Flask 运行环境 |
+
+**注意：** macOS/Windows 使用 `host.docker.internal` 访问宿主机 Ollama，Linux 请使用宿主机 IP 或 `172.17.0.1`。
+
+---
+
 ## 📚 使用指南
 
 ### 生成图片

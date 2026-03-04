@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[oc]
+*.egg-info/
+build/
+dist/
+.wheels/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+LICENSE
+images/
+
+# Planning
+.planning/
+
+# Data (will be created in container)
+data/images/*
+!data/images/.gitkeep
+data/history.json
+
+# Lock files (not needed for Docker build)
+uv.lock
+.python-version
+
+# OS
+.DS_Store
+Thumbs.db
