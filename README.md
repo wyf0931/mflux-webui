@@ -1,183 +1,78 @@
-# 🎨 Ollama WebUI for Image Generate
+# 🎨 mflux WebUI
 
-> **为什么做这个项目？**
+一个基于 Flask 的本地 mflux 图像生成界面。V1 专注于 **Krea 2 Turbo**：支持文生图、文 + 图生图、生成画廊，以及本机 Hugging Face（HF）模型缓存查看。
 
-Ollama 是优秀的本地 LLM 运行工具，但它缺乏图像生成的可视化界面。用户必须通过命令行或 API 调用来生成图片，体验不够友好。
+## 功能
 
-这个项目填补了这个空白——为 Ollama 的图像生成能力提供一个简洁易用的 Web 界面，让你能在浏览器中直接生成图片，无需记忆命令或编写代码。
+- 固定使用 `mflux-community/krea-2-turbo-mflux-q4`
+- 文生图：提示词、尺寸、步数、随机种子和引导系数
+- 文 + 图生图：上传 PNG、JPG、JPEG 或 WebP 参考图，设置 0–1 的参考图强度
+- 画廊：浏览、按模型筛选、打开原图、删除历史图片
+- 本地模型：通过 Hugging Face SDK 只读扫描缓存，不联网、不下载
+- 深色模式和移动端布局
 
----
+## 环境要求
 
-## 🎯 支持的模型
+- macOS Apple Silicon 与 Python 3.11+
+- [uv](https://docs.astral.sh/uv/)
+- mflux 模型首次生成时会按 mflux 的行为下载或读取本机缓存
 
-本项目专门优化适配以下两个 Ollama 图像生成模型：
-
-| 模型 | 特点 | 链接 |
-|------|------|------|
-| **x/flux2-klein** | 高质量图像生成，适合需要精细场景的创作 | [ollama.com/x/flux2-klein](https://ollama.com/x/flux2-klein) |
-| **x/z-image-turbo** | 快速生成，适合频繁迭代和测试 | [ollama.com/x/z-image-turbo](https://ollama.com/x/z-image-turbo) |
-
----
-
-## ✨ 核心功能
-
-| 功能 | 说明 |
-|------|------|
-| **🖼️ 图像生成** | 输入提示词，选择模型和尺寸，一键生成 |
-| **🎨 画廊浏览** | 响应式网格展示所有历史生成，支持筛选和删除 |
-| **📊 生成统计** | 每张图显示耗时、尺寸、模型等元信息 |
-| **💾 自动保存** | 图片存至 `data/images/`，历史记录和设置存至 `data/db.json`（TinyDB） |
-| **🌙 深色模式** | 支持明暗主题切换，自动记住偏好 |
-| **📱 响应式** | PC 和移动端完美适配 |
-
----
-
-## 🖼️ 界面预览
-
-### PC 端
-![PC端界面](https://s1.imagehub.cc/images/2026/03/05/f9ad6fc5e9841360c437357069a00be5.png)
-### 移动端
-
-<div align="center">
-  <img src="https://s1.imagehub.cc/images/2026/03/05/54e9aed7d04eed0fc1475e08c879ad15.png" alt="移动端浅色模式" width="300">
-  <img src="https://s1.imagehub.cc/images/2026/03/05/11428ccd02bb45c2f0c6395746bb6eb4.png" alt="移动端深色模式" width="300">
-</div>
-
----
-
-## 📋 快速开始
-
-### 前置要求
-
-1. **Ollama 已安装并运行**
-   ```bash
-   # 安装 Ollama (macOS/Linux)
-   curl -fsSL https://ollama.com/install.sh | sh
-
-   # 启动 Ollama 服务
-   ollama serve
-   ```
-
-2. **拉取图像生成模型**（选一个或都安装）
-   ```bash
-   # 高质量生成（推荐）
-   ollama pull x/flux2-klein:9b
-
-   # 快速生成
-   ollama pull x/z-image-turbo:fp8
-   ```
-
-### 安装与运行
+## 启动
 
 ```bash
-# 1. 安装 Python 依赖
 uv sync
-
-# 2. 启动服务（端口 8090）
 uv run python app.py
-
-# 3. 浏览器访问
-open http://127.0.0.1:8090
 ```
 
-### 使用 Docker 运行
+浏览器访问 <http://127.0.0.1:8090>。
+
+也可以使用后台运维脚本：
 
 ```bash
-# 1. 构建镜像
-docker build -t ollama-webui .
-
-# 2. 运行容器
-docker run -d \
-  --name ollama-webui \
-  -p 8090:8090 \
-  -e OLLAMA_HOST=http://host.docker.internal:11434 \
-  -v $(pwd)/data:/app/data \
-  ollama-webui
-
-# 3. 浏览器访问
-open http://127.0.0.1:8090
+./ops.sh start
+./ops.sh status
+./ops.sh restart
+./ops.sh stop
 ```
 
-**环境变量：**
+日志写入 `logs/app.log`，进程 ID 写入 `logs/app.pid`。
 
-| 变量 | 默认值 | 说明 |
-|------|--------|------|
-| `OLLAMA_HOST` | `http://host.docker.internal:11434` | Ollama API 地址 |
-| `PORT` | `8090` | 应用端口 |
-| `FLASK_ENV` | `production` | Flask 运行环境 |
+## 使用方式
 
-**注意：** macOS/Windows 使用 `host.docker.internal` 访问宿主机 Ollama，Linux 请使用宿主机 IP 或 `172.17.0.1`。
+### 文生图
 
----
+输入提示词后直接生成。默认尺寸为 768×1376、8 步推理。
 
-## 📚 使用指南
+### 文 + 图生图
 
-### 生成图片
+上传参考图，设定参考图强度后输入提示词。例如，强度为 `0.35` 时，模型会较明显保留原图构图，同时按提示词改写内容。
 
-1. 选择模型（推荐 `x/flux2-klein:9b`）
-2. 输入提示词（中文或英文均可）
-3. 设置尺寸（256-2048，必须是 64 的倍数）
-4. 点击"生成图像"等待完成
+应用实际调用的 mflux 命令等价于：
 
-### 浏览画廊
-
-- 点击导航栏"画廊"查看所有历史生成
-- 支持按模型筛选
-- 点击图片查看大图
-- 悬停可删除图片
-
----
-
-## 💡 提示词示例
-
-```
-一颗苹果，挂在苹果树上，近景，聚集，插画风格
-一片火龙果田地，镜头下的火龙果树挂了几颗火龙果，插画风格，近景
-一串葡萄，插画风格，田园，近景
-枇杷，绿叶，黄色枇杷，古代传统庭院，近景
-```
-
----
-
-## ⚙️ 配置
-
-| 配置项 | 默认值 | 说明 |
-|--------|--------|------|
-| 端口 | `8090` | 在 `app.py` 末尾修改 |
-| Ollama 地址 | `http://127.0.0.1:11434` | 环境变量 `OLLAMA_HOST` |
-| 历史记录上限 | 100 条 | 在 `app.py` 中修改 |
-| 图片尺寸 | 256-2048 | 必须是 64 的倍数 |
-
----
-
-## 🐛 故障排除
-
-**问题：找不到模型**
 ```bash
-# 检查已安装的模型
-ollama list
-
-# 重新拉取模型
-ollama pull x/flux2-klein:9b
+mflux-generate-krea2 \
+  --model mflux-community/krea-2-turbo-mflux-q4 \
+  --image /path/to/input.png 0.35 \
+  --prompt "把黑色的上衣换为淡紫色丝绸质感的吊带衫睡衣" \
+  --steps 12 --seed 42 \
+  --output /path/to/output.png
 ```
 
-**问题：无法连接 Ollama**
+上传的参考图仅作为临时文件使用，生成结束后会自动删除。
+
+## 数据位置
+
+| 内容 | 位置 |
+| --- | --- |
+| 生成图片 | `data/images/` |
+| 生成历史 | `data/db.json` |
+| 临时参考图 | `data/uploads/`（生成后清理） |
+| 应用日志 | `logs/app.log` |
+
+## 开发检查
+
 ```bash
-# 测试 API 连通性
-curl http://127.0.0.1:11434/api/tags
-
-# 检查服务状态
-ps aux | grep ollama
+python -m unittest discover -s tests
+uv lock --check
+python -m compileall app.py db.py mflux_service.py model_cache.py
 ```
-
----
-
-## 📄 许可证
-
-MIT License
-
----
-
-## 🤝 贡献
-
-欢迎提交 Issue 和 Pull Request！

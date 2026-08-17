@@ -2,7 +2,7 @@
 
 ## 目标
 
-将项目收敛为专注于 mflux 的本地图像生成 WebUI。应用使用 Flask 实现，提供生成、画廊、设置和本地 Hugging Face（HF）模型缓存查看能力；不再支持 Ollama 或 Docker 部署。
+将项目收敛为专注于 mflux 的本地图像生成 WebUI。V1 仅支持 Krea 2 Turbo 的文生图和文+图生图，提供画廊和本地 Hugging Face（HF）模型缓存查看能力；不再支持 Ollama 或 Docker 部署。
 
 ## 运行与依赖
 
@@ -12,9 +12,9 @@ Dockerfile、Docker 忽略规则及所有 Ollama 配置、依赖、文档和界�
 
 ## 应用边界
 
-应用不再保留多引擎抽象、引擎选择器或 Ollama HTTP 客户端。mflux 生成服务通过公开的 `mflux-generate` 命令工作：传入模型、提示词、尺寸、随机种子、步数、引导系数、量化位数和输出路径；命令失败或没有产出图片时返回明确错误。
+应用不再保留多引擎抽象、引擎选择器或 Ollama HTTP 客户端。mflux 生成服务通过公开的 `mflux-generate-krea2` 命令工作，固定使用 `mflux-community/krea-2-turbo-mflux-q4`：传入提示词、尺寸、随机种子、步数、引导系数和输出路径；上传参考图时额外传入 `--image <path> <strength>`。命令失败或没有产出图片时返回明确错误。
 
-模型列表仅使用 mflux 0.18.1 支持的标识：`schnell`、`dev`、`krea-dev` 和 `qwen`。图片使用微秒级时间戳命名，避免并发请求覆盖文件。历史记录保留模型、尺寸、提示词、耗时和 mflux 参数。
+V1 不提供模型选择器。图片使用微秒级时间戳命名，避免并发请求覆盖文件。上传的参考图作为临时文件，生成结束后删除。历史记录保留模型、尺寸、提示词、耗时和 mflux 参数。
 
 ## 本地 HF 模型缓存
 
@@ -22,7 +22,7 @@ Dockerfile、Docker 忽略规则及所有 Ollama 配置、依赖、文档和界�
 
 ## 数据与界面
 
-设置只保留 mflux 量化位数。首页固定为 mflux 生成表单；画廊去除引擎字段和按引擎筛选，保留模型筛选、预览和删除。产品名称统一为 mflux WebUI。
+首页固定为 Krea 2 Turbo 表单；画廊去除引擎字段和按引擎筛选，保留模型筛选、预览和删除。产品名称统一为 mflux WebUI。
 
 ## 质量要求
 

@@ -1,18 +1,14 @@
 from flask import Flask, render_template, request, jsonify, send_from_directory
-from datetime import datetime
 from pathlib import Path
-from PIL import Image
-import base64
-import io
-import requests
-import os
+from uuid import uuid4
+from werkzeug.utils import secure_filename
 
-# Import database module
 from db import (
-    get_settings, update_settings, get_setting,
     add_history_entry, get_all_history, delete_history, clean_history,
     get_history_by_timestamp
 )
+from mflux_service import MfluxService
+from model_cache import get_cached_models
 
 # 创建 Flask 应用
 app = Flask(__name__, static_folder='static')
@@ -21,17 +17,14 @@ app = Flask(__name__, static_folder='static')
 IMAGES_DIR = Path(__file__).parent / "data" / "images"
 IMAGES_DIR.mkdir(parents=True, exist_ok=True)
 
-# 配置静态文件路由，用于访问 data/images 中的图片
+
+def _mflux_service():
+    return MfluxService(IMAGES_DIR)
+
+
 @app.route('/static/images/<filename>')
 def serve_image(filename):
     return send_from_directory(IMAGES_DIR, filename)
-
-# 从设置文件或环境变量加载 Ollama 地址
-settings = get_settings()
-OLLAMA_HOST = os.environ.get('OLLAMA_HOST', settings.get('ollamaUrl', 'http://127.0.0.1:11434'))
-if not OLLAMA_HOST.startswith('http'):
-    OLLAMA_HOST = f'http://{OLLAMA_HOST}'
-OLLAMA_HOST = OLLAMA_HOST.replace('0.0.0.0', '127.0.0.1')
 
 
 @app.route('/')
@@ -47,90 +40,91 @@ def gallery():
     return render_template('gallery.html', images=history)
 
 
-@app.route('/settings')
-def settings():
-    """设置页面"""
-    return render_template('settings.html')
+@app.route('/models')
+def models():
+    """本地 Hugging Face 模型缓存页面。"""
+    return render_template('models.html')
+
+
+@app.route('/api/models/cache')
+def get_model_cache_api():
+    """API：只读获取本机 Hugging Face 模型缓存。"""
+    return jsonify(get_cached_models())
 
 
 @app.route('/api/generate', methods=['POST'])
 def generate_image():
     """API: 生成图片"""
-    data = request.json
+    data = (request.get_json(silent=True) or {}) if request.is_json else request.form
     prompt = data.get('prompt')
-    model = data.get('model', 'x/flux2-klein:9b')
     width = data.get('width', 768)
     height = data.get('height', 1024)
 
     if not prompt:
         return jsonify({'error': '请输入 prompt'}), 400
 
+    input_path = None
     try:
-        print(f"开始生成图片: {prompt}")
-        print(f"模型: {model}, 尺寸: {width}x{height}")
+        input_image = request.files.get('image')
+        if input_image and input_image.filename:
+            suffix = Path(secure_filename(input_image.filename)).suffix.lower()
+            if suffix not in {'.png', '.jpg', '.jpeg', '.webp'}:
+                return jsonify({'error': '参考图仅支持 PNG、JPG、JPEG 或 WebP'}), 400
+            uploads_dir = IMAGES_DIR.parent / 'uploads'
+            uploads_dir.mkdir(parents=True, exist_ok=True)
+            input_path = uploads_dir / f'{uuid4().hex}{suffix}'
+            input_image.save(input_path)
+        result = _mflux_service().generate(
+            prompt=prompt,
+            width=width,
+            height=height,
+            seed=data.get('seed'),
+            steps=data.get('steps'),
+            guidance=data.get('guidance'),
+            input_image=input_path,
+            image_strength=data.get('imageStrength'),
+        )
 
-        request_data = {
-            "model": model,
-            "prompt": prompt,
-            "stream": False,
-            "width": width,
-            "height": height,
-        }
-
-        url = f"{OLLAMA_HOST}/api/generate"
-        response = requests.post(url, json=request_data, timeout=300)
-        response.raise_for_status()
-        response_data = response.json()
-
-        base64_image = response_data.get("image")
-
-        if not base64_image:
-            return jsonify({'error': '生成失败：未返回图片数据'}), 500
-
-        timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-        filename = f"{timestamp}.png"
-        filepath = IMAGES_DIR / filename
-
-        image_data = base64.b64decode(base64_image)
-        image = Image.open(io.BytesIO(image_data))
-        image.save(filepath, "PNG")
-
-        print(f"图片已保存: {filepath}")
-
-        total_duration = response_data.get("total_duration", 0) / 1e9
+        print(f"图片已保存: {result.image_path} ({result.duration:.1f}s)")
 
         # 保存历史记录
+        timestamp = result.filename.replace('.png', '')
         history_entry = {
             "timestamp": timestamp,
-            "model": model,
-            "width": width,
-            "height": height,
-            "prompt": prompt,
-            "image_path": str(filepath),
-            "duration": total_duration
+            "model": result.model,
+            "width": result.width,
+            "height": result.height,
+            "prompt": result.prompt,
+            "image_path": result.image_path,
+            "duration": result.duration,
+            "metadata": result.metadata,
         }
         add_history_entry(history_entry)
 
         return jsonify({
             'success': True,
-            'image_path': str(filepath),
-            'filename': filename,
-            'duration': total_duration,
-            'timestamp': timestamp
+            'image_path': result.image_path,
+            'filename': result.filename,
+            'duration': result.duration,
+            'timestamp': timestamp,
         })
 
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
     except Exception as e:
-        error_msg = f"生成失败：{str(e)}"
         print(f"错误: {e}")
         import traceback
         traceback.print_exc()
-        return jsonify({'error': error_msg}), 500
+        return jsonify({'error': f'生成失败：{str(e)}'}), 500
+    finally:
+        if input_path and input_path.exists():
+            input_path.unlink()
 
 
 @app.route('/api/history')
 def get_history():
     """API: 获取生成历史"""
-    clean_history()  # Remove entries with missing images
+    clean_history()
     return jsonify(get_all_history())
 
 
@@ -142,13 +136,11 @@ def delete_image(timestamp):
         if not entry:
             return jsonify({'error': '记录不存在'}), 404
 
-        # Delete image file
         image_path = Path(entry['image_path'])
         if image_path.exists():
             image_path.unlink()
             print(f"已删除图片: {image_path}")
 
-        # Delete from database
         delete_history(timestamp)
         return jsonify({'success': True, 'message': '删除成功'})
 
@@ -157,33 +149,5 @@ def delete_image(timestamp):
         return jsonify({'error': f'删除失败: {str(e)}'}), 500
 
 
-@app.route('/api/settings', methods=['GET'])
-def get_settings_api():
-    """API: 获取当前设置"""
-    return jsonify(get_settings())
-
-
-@app.route('/api/settings', methods=['POST'])
-def update_settings_api():
-    """API: 更新设置"""
-    try:
-        data = request.json
-        ollamaUrl = data.get('ollamaUrl', '').strip()
-
-        if not ollamaUrl:
-            return jsonify({'error': 'Ollama URL 不能为空'}), 400
-
-        if not ollamaUrl.startswith('http://') and not ollamaUrl.startswith('https://'):
-            ollamaUrl = f'http://{ollamaUrl}'
-
-        settings = update_settings({'ollamaUrl': ollamaUrl})
-        print(f"设置已更新: ollamaUrl = {ollamaUrl}")
-        return jsonify({'success': True, 'settings': settings})
-
-    except Exception as e:
-        print(f"保存设置失败: {e}")
-        return jsonify({'error': f'保存设置失败: {str(e)}'}), 500
-
-
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=8090)
+    app.run(debug=False, host='0.0.0.0', port=8090)

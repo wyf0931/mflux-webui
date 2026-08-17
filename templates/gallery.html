@@ -1,154 +1,74 @@
 {% extends "base.html" %}
-
-{% block title %}画廊 - Ollama WebUI{% endblock %}
-
+{% block title %}画廊 - mflux WebUI{% endblock %}
 {% block content %}
 <div class="max-w-[1400px] mx-auto">
-    <!-- Filter Bar -->
-    <div class="flex items-center gap-3 mb-8 flex-wrap sm:flex-nowrap">
-        <span class="text-sm text-text-muted">筛选:</span>
-        <div class="flex gap-2 flex-wrap">
-            <button onclick="toggleFilter('z-image-turbo')" class="filter-tag active flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium cursor-pointer" data-filter="z-image-turbo">
-                <span class="text-sm">⚡</span>
-                <span>Z Image Turbo</span>
-                <span class="check-icon opacity-0 transition-opacity">✓</span>
-            </button>
-            <button onclick="toggleFilter('flux2-klein')" class="filter-tag active flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium cursor-pointer" data-filter="flux2-klein">
-                <span class="text-sm">✨</span>
-                <span>Flux 2 Klein</span>
-                <span class="check-icon opacity-0 transition-opacity">✓</span>
-            </button>
-        </div>
-    </div>
-
-    <!-- Gallery Grid -->
-    <div id="gallery" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-fadeIn">
-        {% if images %}
-            {% for image in images %}
-            {% set model_key = 'z-image-turbo' if 'z-image-turbo' in image.model else 'flux2-klein' %}
-            <div class="gallery-card bg-bg-secondary border border-border rounded-2xl overflow-hidden shadow-md hover:-translate-y-1 hover:shadow-lg transition-all duration-300 animate-scaleIn" data-timestamp="{{ image.timestamp }}" data-model="{{ model_key }}" style="animation-delay: {{ loop.index * 0.05 }}s">
-                <!-- Image Wrapper -->
-                <div class="relative w-full overflow-hidden bg-bg-tertiary group">
-                    <a href="/static/images/{{ image.timestamp }}.png" target="_blank" class="block">
-                        <img src="/static/images/{{ image.timestamp }}.png" alt="{{ image.prompt }}" loading="lazy" class="w-full h-auto object-cover transition-transform duration-300 hover:scale-105">
-                    </a>
-                    <button onclick="confirmDelete('{{ image.timestamp }}')" class="delete-btn absolute top-3 right-3 w-9 h-9 p-0 bg-red-500/95 text-white border-none rounded-xl flex items-center justify-center opacity-0 scale-90 transition-all duration-200 hover:bg-red-600 hover:scale-100 shadow-lg sm:group-hover:opacity-100 sm:group-hover:scale-100 lg:opacity-0 lg:scale-90" title="删除图片">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
-                        </svg>
+    <div class="flex items-center gap-3 mb-8 flex-wrap"><span class="text-sm text-text-muted">按模型筛选：</span><div id="filterBar" class="flex gap-2 flex-wrap"></div></div>
+    <div id="gallery" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    {% for image in images %}
+        <article class="gallery-card bg-bg-secondary border border-border rounded-2xl overflow-hidden shadow-md" data-timestamp="{{ image.timestamp }}" data-model="{{ image.model }}">
+            <div class="relative group bg-bg-tertiary"><a href="/static/images/{{ image.timestamp }}.png" target="_blank"><img src="/static/images/{{ image.timestamp }}.png" alt="{{ image.prompt }}" loading="lazy" class="w-full h-auto"></a>
+                <div class="absolute right-3 bottom-3 flex gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                    <button class="copy-prompt w-9 h-9 grid place-items-center rounded-lg bg-black/65 text-white hover:bg-black/80" data-prompt="{{ image.prompt }}" aria-label="复制完整提示词" title="复制完整提示词">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    </button>
+                    <button onclick="deleteImage('{{ image.timestamp }}')" class="w-9 h-9 grid place-items-center rounded-lg bg-red-500 text-white hover:bg-red-600" aria-label="删除图片" title="删除图片">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14M10 10v6m4-6v6"/></svg>
                     </button>
                 </div>
-
-                <!-- Gallery Info -->
-                <div class="p-5">
-                    <p class="text-sm text-text-secondary mb-3 leading-relaxed whitespace-pre-wrap">{{ image.prompt }}</p>
-                    <div class="flex flex-wrap gap-2 mb-3">
-                        <span class="text-xs bg-bg-tertiary text-text-muted px-2.5 py-1 rounded-md font-medium border border-border-light">{{ image.width }}×{{ image.height }}</span>
-                        <span class="text-xs bg-bg-tertiary text-text-muted px-2.5 py-1 rounded-md font-medium border border-border-light">{{ image.model.split(':')[0] }}</span>
-                        <span class="text-xs bg-bg-tertiary text-text-muted px-2.5 py-1 rounded-md font-medium border border-border-light">{{ image.duration|round(1) }}s</span>
-                    </div>
-                    <p class="text-xs text-text-muted m-0 font-mono">{{ image.timestamp }}</p>
-                </div>
             </div>
-            {% endfor %}
-        {% else %}
-            <div class="col-span-full text-center py-20 px-8 bg-bg-secondary border-2 border-dashed border-border rounded-2xl">
-                <div class="text-6xl mb-4">🎨</div>
-                <h3 class="text-2xl font-display font-semibold text-text-secondary mb-2">暂无图像</h3>
-                <p class="text-text-muted mb-6">开始你的第一次 AI 创作吧</p>
-                <a href="/" class="inline-flex items-center justify-center px-6 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-primary-hover transition-all">创建图像</a>
-            </div>
-        {% endif %}
+            <div class="p-5"><p class="text-sm text-text-secondary mb-3 whitespace-pre-wrap overflow-hidden" style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2">{{ image.prompt }}</p><div class="flex flex-wrap gap-2 text-xs text-text-muted"><span>{{ image.width }}×{{ image.height }}</span><span>{{ image.model }}</span><span>{{ image.duration|round(1) }}s</span></div><p class="text-xs text-text-muted mt-3 font-mono">{{ image.timestamp }}</p></div>
+        </article>
+    {% else %}
+        <div class="col-span-full text-center py-20 bg-bg-secondary border-2 border-dashed border-border rounded-2xl"><div class="text-6xl mb-4">🎨</div><h3 class="text-2xl font-semibold mb-2">暂无图像</h3><a href="/" class="text-primary">开始生成</a></div>
+    {% endfor %}
     </div>
 </div>
-
 <script>
-    function confirmDelete(timestamp) {
-        if (confirm('确定要删除这张图片吗？此操作无法撤销。')) {
-            deleteImage(timestamp);
-        }
+async function deleteImage(timestamp) {
+    if (!confirm('确定要删除这张图片吗？此操作无法撤销。')) return;
+    const response = await fetch(`/api/delete/${timestamp}`, {method: 'DELETE'});
+    if (response.ok) document.querySelector(`[data-timestamp="${timestamp}"]`)?.remove(); else alert((await response.json()).error || '删除失败');
+}
+async function copyPrompt(button, prompt) {
+    try {
+        await navigator.clipboard.writeText(prompt);
+    } catch (_error) {
+        const textarea = document.createElement('textarea');
+        textarea.value = prompt;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        textarea.remove();
     }
+    const original = button.innerHTML;
+    button.textContent = '✓';
+    setTimeout(() => { button.innerHTML = original; }, 1200);
+}
+document.querySelectorAll('.copy-prompt').forEach(button => {
+    button.addEventListener('click', () => copyPrompt(button, button.dataset.prompt));
+});
+const KREA2_MODEL = 'mflux-community/krea-2-turbo-mflux-q4';
+const KREA2_LABEL = 'Krea 2 Turbo';
+const cards = [...document.querySelectorAll('.gallery-card')];
+const models = [...new Set([KREA2_MODEL, ...cards.map(card => card.dataset.model)])];
 
-    async function deleteImage(timestamp) {
-        try {
-            const response = await fetch(`/api/delete/${timestamp}`, {
-                method: 'DELETE'
-            });
+function modelLabel(model) { return model === KREA2_MODEL ? KREA2_LABEL : model; }
 
-            const result = await response.json();
-
-            if (response.ok && result.success) {
-                const item = document.querySelector(`.gallery-card[data-timestamp="${timestamp}"]`);
-                if (item) {
-                    item.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-                    item.style.opacity = '0';
-                    item.style.transform = 'scale(0.9)';
-                    setTimeout(() => {
-                        item.remove();
-                        const gallery = document.getElementById('gallery');
-                        if (!gallery.querySelector('.gallery-card')) {
-                            location.reload();
-                        }
-                    }, 300);
-                }
-            } else {
-                alert(result.error || '删除失败');
-            }
-        } catch (error) {
-            alert('删除失败: ' + error.message);
-        }
-    }
-
-    // Track selected filters
-    let selectedFilters = new Set(['z-image-turbo', 'flux2-klein']);
-
-    function toggleFilter(filter) {
-        const tag = document.querySelector(`.filter-tag[data-filter="${filter}"]`);
-        const checkIcon = tag.querySelector('.check-icon');
-
-        if (selectedFilters.has(filter)) {
-            // Deselect
-            selectedFilters.delete(filter);
-            tag.classList.remove('active');
-            checkIcon.style.opacity = '0';
-        } else {
-            // Select
-            selectedFilters.add(filter);
-            tag.classList.add('active');
-            checkIcon.style.opacity = '1';
-        }
-
-        applyFilters();
-    }
-
-    function applyFilters() {
-        const cards = document.querySelectorAll('.gallery-card');
-
-        cards.forEach((card, index) => {
-            const cardModel = card.dataset.model;
-            card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-
-            if (selectedFilters.has(cardModel)) {
-                card.style.display = 'block';
-                setTimeout(() => {
-                    card.style.opacity = '1';
-                    card.style.transform = 'scale(1)';
-                }, index * 30);
-            } else {
-                card.style.opacity = '0';
-                card.style.transform = 'scale(0.9)';
-                setTimeout(() => {
-                    card.style.display = 'none';
-                }, 300);
-            }
-        });
-    }
-
-    // Initialize filter tags
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('.filter-tag.active .check-icon').forEach(icon => {
-            icon.style.opacity = '1';
-        });
+function selectModel(selectedModel) {
+    cards.forEach(card => { card.style.display = selectedModel === 'all' || card.dataset.model === selectedModel ? 'block' : 'none'; });
+    document.querySelectorAll('.filter-tag').forEach(button => {
+        button.classList.toggle('active', button.dataset.model === selectedModel);
     });
+}
+
+[{ model: 'all', label: '全部' }, ...models.map(model => ({ model, label: modelLabel(model) }))].forEach(({ model, label }) => {
+    const button = document.createElement('button');
+    button.className = 'filter-tag px-3 py-1.5 rounded-lg text-sm';
+    button.dataset.model = model;
+    button.textContent = label;
+    button.onclick = () => selectModel(model);
+    filterBar.appendChild(button);
+});
+selectModel('all');
 </script>
 {% endblock %}

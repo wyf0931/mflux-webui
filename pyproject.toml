@@ -1,13 +1,13 @@
 [project]
-name = "ollama-webui-image-generate"
+name = "mflux-webui"
 version = "0.1.0"
-description = "Ollama WebUI for Image Generate - Flask-based UI for local AI image generation"
+description = "mflux WebUI - Flask-based UI for local AI image generation"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "flask>=3.0.0",
-    "Pillow>=10.0.0",
-    "requests>=2.31.0",
-    "python-dotenv>=1.0.0",
+    "huggingface-hub>=0.30.0",
+    "mflux==0.18.1",
+    "socksio>=1.0.0",
     "tinydb>=4.8.2",
 ]

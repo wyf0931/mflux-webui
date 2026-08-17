@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Ollama WebUI{% endblock %}</title>
+    <link rel="icon" href="data:,">
+    <title>{% block title %}mflux WebUI{% endblock %}</title>
 
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -280,7 +281,7 @@
     <nav class="navbar sticky top-0 z-50">
         <div class="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between">
             <a href="/" class="nav-brand text-xl font-bold font-display text-text-primary hover:opacity-80 transition-opacity">
-                <span class="gradient-text">Ollama WebUI</span>
+                <span class="gradient-text">mflux WebUI</span>
             </a>
 
             <!-- Desktop Menu -->
@@ -296,14 +297,14 @@
                     </a>
                 </li>
                 <li>
+                    <a href="/models" class="nav-link px-4 py-2 rounded-lg text-sm font-medium text-text-muted hover:text-text-primary hover:bg-nav-hover transition-all {% if request.endpoint == 'models' %}text-primary !bg-primary-glow{% endif %}">
+                        <span class="mr-1.5">📦</span>本地模型
+                    </a>
+                </li>
+                <li>
                     <button onclick="toggleTheme()" class="theme-toggle px-3 py-2 rounded-lg text-xl border-border hover:border-primary transition-all" title="切换主题">
                         <span id="themeIcon">🌙</span>
                     </button>
-                </li>
-                <li>
-                    <a href="/settings" class="px-3 py-2 rounded-lg text-xl border-border hover:border-primary transition-all" title="设置">
-                        <span>⚙️</span>
-                    </a>
                 </li>
             </ul>
 
@@ -312,9 +313,6 @@
                 <button onclick="toggleTheme()" class="theme-toggle px-3 py-2 rounded-lg text-xl border-border hover:border-primary transition-all" title="切换主题">
                     <span id="themeIconMobile">🌙</span>
                 </button>
-                <a href="/settings" class="px-3 py-2 rounded-lg text-xl border-border hover:border-primary transition-all" title="设置">
-                    <span>⚙️</span>
-                </a>
                 <button onclick="toggleMenu()" class="hamburger p-2 border border-border rounded-lg bg-bg-primary text-text-primary hover:text-primary hover:border-primary transition-all" title="菜单">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
@@ -333,6 +331,11 @@
             <li class="border-t border-border-light">
                 <a href="/gallery" class="block px-6 py-4 text-text-muted hover:text-text-primary hover:bg-nav-hover {% if request.endpoint == 'gallery' %}text-primary{% endif %}">
                     <span class="mr-2">🎨</span>画廊
+                </a>
+            </li>
+            <li class="border-t border-border-light">
+                <a href="/models" class="block px-6 py-4 text-text-muted hover:text-text-primary hover:bg-nav-hover {% if request.endpoint == 'models' %}text-primary{% endif %}">
+                    <span class="mr-2">📦</span>本地模型
                 </a>
             </li>
         </ul>
