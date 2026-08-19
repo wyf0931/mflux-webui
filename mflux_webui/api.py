@@ -6,12 +6,17 @@ from uuid import uuid4
 from flask import Blueprint, current_app, jsonify, request
 from werkzeug.utils import secure_filename
 
-from db import add_history_entry, clean_history, delete_history, get_all_history, get_history_by_timestamp
-from mflux_service import MODEL_ID, MfluxService
-from model_cache import get_cached_models
-from model_downloader import download_manager
-from model_registry import catalog_models, get_model_spec
-
+from .db import (
+    add_history_entry,
+    clean_history,
+    delete_history,
+    get_all_history,
+    get_history_by_timestamp,
+)
+from .mflux_service import MODEL_ID, MfluxService
+from .model_cache import get_cached_models
+from .model_downloader import download_manager
+from .model_registry import catalog_models, configured_sources, get_model_spec
 
 api = Blueprint("api", __name__, url_prefix="/api")
 
@@ -47,7 +52,7 @@ def model_catalog():
     cached = get_cached_models(include_hub_metadata=False)
     if cached["error"]:
         return failure(cached["error"], code=2101, status=503, data=[])
-    return success(catalog_models(model["repoId"] for model in cached["models"]))
+    return success(catalog_models(cached["models"], sources=configured_sources()))
 
 
 @api.get("/models/downloads")
@@ -57,18 +62,22 @@ def model_downloads():
 
 @api.post("/models/downloads")
 def start_model_download():
-    repo_id = (request.get_json(silent=True) or {}).get("repoId", "")
+    data = request.get_json(silent=True) or {}
+    repo_id = data.get("repoId", "")
+    source = data.get("source", "huggingface")
     try:
-        return success(download_manager.start(repo_id), message="下载任务已创建", status=202)
+        return success(download_manager.start(repo_id, source=source), message="下载任务已创建", status=202)
     except ValueError as exc:
         return failure(str(exc), code=2201)
 
 
 @api.delete("/models/downloads")
 def cancel_model_download():
-    repo_id = (request.get_json(silent=True) or {}).get("repoId", "")
+    data = request.get_json(silent=True) or {}
+    repo_id = data.get("repoId", "")
+    source = data.get("source", "huggingface")
     try:
-        download_manager.cancel(repo_id)
+        download_manager.cancel(repo_id, source=source)
         return success(message="取消请求已提交")
     except ValueError as exc:
         return failure(str(exc), code=2202)

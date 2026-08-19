@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from mflux_service import MODEL_ID, MfluxService
+from mflux_webui.mflux_service import MODEL_ID, MfluxService
 
 
 class MfluxServiceTest(unittest.TestCase):

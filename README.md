@@ -1,40 +1,51 @@
-# 🎨 mflux WebUI
+# mflux WebUI
 
-一个基于 Flask 的本地 mflux 图像生成界面。支持 Krea 2 Turbo、Z-Image Turbo 与 FLUX.2 Klein 的模型库管理、文生图、文 + 图生图和画廊。
+[中文文档](README.zh-CN.md)
 
-## 功能
+A local Flask web UI for running mflux image models with text-to-image, image-to-image, model cache management, and a generation gallery.
 
-- 模型库：受控推荐、后台下载、已安装缓存与 Hugging Face 页面跳转
-- 文生图：提示词、尺寸、步数、随机种子和引导系数
-- 文 + 图生图：上传 PNG、JPG、JPEG 或 WebP 参考图，设置 0–1 的参考图强度
-- 画廊：浏览、按模型筛选、打开原图、删除历史图片
-- 本地模型：通过 Hugging Face SDK 管理缓存与下载
-- 深色模式和移动端布局
+## Highlights
 
-## 界面
+- Supports Krea 2 Turbo, Z-Image Turbo, and FLUX.2 Klein model families.
+- Uses Alpine.js and DaisyUI for a lightweight responsive interface.
+- Lists installed models separately from curated recommendations.
+- Downloads from Hugging Face and ModelScope using each SDK's default cache directory.
+- Supports dark mode, mobile layouts, reference-image editing, and gallery history.
 
-| 生图 | 画廊 | 模型库 |
+## Screenshots
+
+| Generate | Gallery | Models |
 | --- | --- | --- |
-| ![生图页面](docs/images/generate.png) | ![画廊页面](docs/images/gallery.png) | ![模型库页面](docs/images/models.png) |
+| ![Generate page](docs/images/generate.png) | ![Gallery page](docs/images/gallery.png) | ![Models page](docs/images/models.png) |
 
-## 环境要求
+## Requirements
 
-- macOS Apple Silicon 与 Python 3.11+
+- macOS on Apple Silicon
+- Python 3.11 or newer
 - [uv](https://docs.astral.sh/uv/)
-- mflux 模型首次生成时会按 mflux 的行为下载或读取本机缓存
+- Node.js and npm
 
-## 启动
+The first generation or model download may fetch several gigabytes of weights. Make sure your machine has enough disk space and memory for the selected model.
+
+## Installation
 
 ```bash
+git clone https://github.com/wyf0931/mflux-webui.git
+cd mflux-webui
 uv sync
 npm install
 npm run build
+```
+
+## Run
+
+```bash
 uv run python app.py
 ```
 
-浏览器访问 <http://127.0.0.1:8090>。
+Open <http://127.0.0.1:8090> in your browser.
 
-也可以使用后台运维脚本：
+For background operation:
 
 ```bash
 ./ops.sh start
@@ -43,51 +54,79 @@ uv run python app.py
 ./ops.sh stop
 ```
 
-日志写入 `logs/app.log`，进程 ID 写入 `logs/app.pid`。
+Logs are written to `logs/app.log`; the process ID is written to `logs/app.pid`.
 
-## 使用方式
+## Model repositories
 
-### 文生图
+Curated models are defined in [`config/models.json`](config/models.json), loaded when the application starts. Each entry can provide a Hugging Face ID, a ModelScope ID, or both.
 
-输入提示词后直接生成。默认尺寸为 768×1376、8 步推理。
+The `MODEL_REPO` setting controls which recommendation and download channels are enabled:
 
-### 文 + 图生图
-
-上传参考图，设定参考图强度后输入提示词。例如，强度为 `0.35` 时，模型会较明显保留原图构图，同时按提示词改写内容。
-
-应用通过 mflux Python API 调用模型，避免依赖外部命令进程。
-
-上传的参考图仅作为临时文件使用，生成结束后会自动删除。
-
-## 数据位置
-
-| 内容 | 位置 |
+| Value | Enabled channels |
 | --- | --- |
-| 生成图片 | `data/images/` |
-| 生成历史 | `data/db.json` |
-| 临时参考图 | `data/uploads/`（生成后清理） |
-| 应用日志 | `logs/app.log` |
+| `all` | Hugging Face and ModelScope (default) |
+| `huggingface` | Hugging Face only |
+| `modelscope` | ModelScope only |
 
-## 开发检查
+Copy `.env.example` to `.env` and change the value if needed:
+
+```bash
+cp .env.example .env
+```
+
+Downloads use the default cache locations managed by `huggingface_hub` and `modelscope`; the application does not move or replace those files.
+
+## Usage
+
+### Text-to-image
+
+Choose an installed model, enter a prompt, select an aspect ratio, and generate an image. Advanced controls include inference steps, guidance, and seed.
+
+### Image-to-image
+
+Upload a PNG, JPG, JPEG, or WebP reference image and choose an image strength from `0` to `1`. Uploaded references are temporary and removed after generation.
+
+### Model library
+
+The model page shows installed models first. The recommendation section provides Hugging Face and ModelScope tabs, repository links, download progress, and cancellation for active downloads.
+
+## Data locations
+
+| Data | Location |
+| --- | --- |
+| Generated images | `data/images/` |
+| Generation history | `data/db.json` |
+| Temporary reference images | `data/uploads/` |
+| Application logs | `logs/app.log` |
+| Model weights | SDK-managed default caches |
+
+## Development
 
 ```bash
 uv run python -m unittest discover -s tests
 uv lock --check
+uv run --with ruff ruff check app.py mflux_webui tests
 npm run build
-uv run python -m compileall app.py api.py db.py mflux_service.py model_cache.py
+uv run python -m compileall app.py mflux_webui tests
 ```
 
-## 架构
+The application uses Flask for the page shell and API, Alpine.js for local page state, Tailwind CSS + DaisyUI for styling, and mflux for local inference.
 
-- Flask：页面壳、静态资源与 `/api` Blueprint 装配。
-- Alpine.js：页面局部状态、表单、模型下载状态与画廊交互。
-- Tailwind CSS + DaisyUI：统一视觉组件。
-- mflux + Hugging Face Hub SDK：本地推理、缓存扫描与模型下载。
+## Project structure
 
-所有 API 统一返回以下 JSON 结构：
-
-```json
-{ "code": 0, "data": {}, "message": "ok" }
+```text
+mflux_webui/       Flask application package, routes, services, and assets
+config/            Curated model configuration
+tests/             Unit tests and mocked inference coverage
+data/              Runtime image and history data
+docs/              Design notes and screenshots
+app.py             Backward-compatible development entry point
 ```
 
-`code = 0` 表示成功；`data` 可为对象、数组或 `null`；非零 `code` 表示业务错误。
+## Contributing
+
+Issues and pull requests are welcome. Please describe the user-facing behavior, include reproduction steps for bugs, and run the development checks before submitting a pull request.
+
+## License
+
+This project is distributed under the [ISC License](LICENSE).

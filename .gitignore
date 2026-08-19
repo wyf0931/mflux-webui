@@ -10,6 +10,7 @@ wheels/
 .venv
 logs/
 *.log
+.env
 CLAUDE.md
 .planning/*
 .playwright-cli/

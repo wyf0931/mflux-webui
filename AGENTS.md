@@ -11,6 +11,7 @@
 - 前台启动：`uv run python app.py`
 - 后台运维：`./ops.sh start|stop|status|restart`
 - 自动化检查优先使用 `npm run build`、`uv run python -m unittest discover -s tests`、`uv lock --check` 和 Python 编译。
+- 静态检查可使用 `uv run --with ruff ruff check app.py mflux_webui tests`。
 
 ## 文档规则
 

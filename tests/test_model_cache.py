@@ -1,7 +1,11 @@
 import unittest
 from unittest.mock import patch
 
-from model_cache import get_cached_models, get_model_family, is_mflux_image_model
+from mflux_webui.model_cache import (
+    get_cached_models,
+    get_model_family,
+    is_mflux_image_model,
+)
 
 
 class ModelCacheTest(unittest.TestCase):
@@ -18,7 +22,7 @@ class ModelCacheTest(unittest.TestCase):
         self.assertEqual(get_model_family("filipstrand/Z-Image-Turbo-mflux-4bit"), "Z-Image")
         self.assertEqual(get_model_family("mlx-community/FLUX.2-klein-9b-4bit"), "FLUX.2")
 
-    @patch("model_cache.scan_cache_dir", side_effect=OSError("缓存不可读"))
+    @patch("mflux_webui.model_cache.scan_cache_dir", side_effect=OSError("缓存不可读"))
     def test_returns_error_when_cache_cannot_be_read(self, _scan):
         result = get_cached_models()
         self.assertEqual(result["models"], [])

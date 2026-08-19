@@ -1,17 +1,11 @@
 """mflux 0.18.1 的 Krea 2 Python API 适配层。"""
 
+import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-import time
 
-from mflux.models.common.config import ModelConfig
-from mflux.models.flux2 import Flux2Klein
-from mflux.models.krea2 import Krea2
-from mflux.models.z_image import ZImageTurbo
-
-from model_registry import get_model_spec
-
+from .model_registry import get_model_spec
 
 MODEL_ID = "mflux-community/krea-2-turbo-mflux-q4"
 # Krea 2 Turbo 是 CFG 1.0 蒸馏模型；更高的引导系数会偏离官方采样设置并损伤画面质量。
@@ -62,6 +56,12 @@ class MfluxService:
 
     def _load_model(self):
         """以 mflux 的 Krea 2 配置加载已缓存的量化模型。"""
+        # 延迟导入 MLX，确保模型目录、缓存 API 和开发测试不需要在导入阶段初始化 Metal。
+        from mflux.models.common.config import ModelConfig
+        from mflux.models.flux2 import Flux2Klein
+        from mflux.models.krea2 import Krea2
+        from mflux.models.z_image import ZImageTurbo
+
         if self.spec.backend == "krea2":
             return Krea2(model_config=ModelConfig.krea2(), model_path=self.model_id)
         if self.spec.backend == "zimage":

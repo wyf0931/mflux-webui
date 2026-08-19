@@ -1,10 +1,11 @@
-from tinydb import TinyDB, Query
-from pathlib import Path
 import json
 import threading
+from pathlib import Path
+
+from tinydb import Query, TinyDB
 
 # Database directory
-DATA_DIR = Path(__file__).parent / "data"
+DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 # TinyDB database file

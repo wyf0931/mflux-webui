@@ -8,9 +8,9 @@
     "test": "tests"
   },
   "scripts": {
-    "build:css": "tailwindcss -i ./static/css/input.css -o ./static/css/app.css --minify",
-    "watch:css": "tailwindcss -i ./static/css/input.css -o ./static/css/app.css --watch",
-    "build:js": "esbuild static/js/main.js --bundle --minify --outfile=static/js/app.js",
+    "build:css": "tailwindcss -i ./mflux_webui/static/css/input.css -o ./mflux_webui/static/css/app.css --minify",
+    "watch:css": "tailwindcss -i ./mflux_webui/static/css/input.css -o ./mflux_webui/static/css/app.css --watch",
+    "build:js": "esbuild mflux_webui/static/js/main.js --bundle --minify --outfile=mflux_webui/static/js/app.js",
     "build": "npm run build:css && npm run build:js"
   },
   "repository": {

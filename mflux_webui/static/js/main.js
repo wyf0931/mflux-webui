@@ -61,18 +61,19 @@ Alpine.data("generationPage", () => ({
 }));
 
 Alpine.data("modelLibrary", () => ({
-  catalog: [], cached: [], tasks: [], error: "", timer: null,
-  get catalogItems() { return this.catalog; },
+  catalog: [], cached: [], tasks: [], error: "", timer: null, activeSource: "huggingface",
+  get availableSources() { return [...new Set(this.catalog.map((model) => model.source))]; },
+  get catalogItems() { return this.catalog.filter((model) => model.source === this.activeSource); },
   get installedItems() { return this.cached; },
   async init() { await this.load(); this.timer = window.setInterval(() => this.load(), 2000); },
-  async load() { try { const [catalog, cached, tasks] = await Promise.all([apiClient.get("/api/models/catalog"), apiClient.get("/api/models/cache"), apiClient.get("/api/models/downloads")]); this.catalog = catalog; this.cached = cached; this.tasks = tasks; this.error = ""; } catch (error) { this.error = error.message; } },
-  taskFor(repoId) { return this.tasks.find((task) => task.repoId === repoId); },
-  isDownloading(repoId) { return ["queued", "downloading", "cancelling"].includes((this.taskFor(repoId) || {}).status); },
-  downloadLabel(repoId) { const task = this.taskFor(repoId) || {}; return this.isDownloading(repoId) ? "下载中" : task.status === "failed" ? "重试下载" : "下载"; },
-  async download(repoId) { try { await apiClient.post("/api/models/downloads", { repoId }); await this.load(); } catch (error) { this.error = error.message; } },
-  async cancel(repoId) { try { await apiClient.delete("/api/models/downloads", { repoId }); await this.load(); } catch (error) { this.error = error.message; } },
+  async load() { try { const [catalog, cached, tasks] = await Promise.all([apiClient.get("/api/models/catalog"), apiClient.get("/api/models/cache"), apiClient.get("/api/models/downloads")]); this.catalog = catalog; this.cached = cached; this.tasks = tasks; if (!this.availableSources.includes(this.activeSource)) this.activeSource = this.availableSources[0] || "huggingface"; this.error = ""; } catch (error) { this.error = error.message; } },
+  taskFor(repoId, source = "huggingface") { return this.tasks.find((task) => task.repoId === repoId && task.source === source); },
+  isDownloading(repoId, source) { return ["queued", "downloading", "cancelling"].includes((this.taskFor(repoId, source) || {}).status); },
+  async download(repoId, source) { try { await apiClient.post("/api/models/downloads", { repoId, source }); await this.load(); } catch (error) { this.error = error.message; } },
+  async cancel(repoId, source) { try { await apiClient.delete("/api/models/downloads", { repoId, source }); await this.load(); } catch (error) { this.error = error.message; } },
   isInstalled(repoId) { return this.cached.some((model) => model.repoId === repoId); },
-  size(value) { return value ? `${value.toFixed(1)} GB` : "大小待确认"; },
+  formatSize(value) { return value ? `${(value / 1024 / 1024 / 1024).toFixed(1)} GB` : "大小待确认"; },
+  sourceLabel(source) { return source === "modelscope" ? "ModelScope" : "Hugging Face"; },
   taskLabel(task) { return task.error || (task.currentFile ? `${task.filesDone}/${task.filesTotal} · ${task.currentFile}` : task.status); },
 }));
 

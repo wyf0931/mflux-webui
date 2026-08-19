@@ -4,9 +4,9 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-import api as api_module
-from app import create_app
-from mflux_service import GenerationResult, MODEL_ID
+import mflux_webui.api as api_module
+from mflux_webui import create_app
+from mflux_webui.mflux_service import MODEL_ID, GenerationResult
 
 
 class ApiTest(unittest.TestCase):
