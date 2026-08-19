@@ -15,16 +15,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/wyf0931/Ollama-WebUI-for-Image-Generate.git"
+    "url": "git+https://github.com/wyf0931/mflux-webui.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "bugs": {
-    "url": "https://github.com/wyf0931/Ollama-WebUI-for-Image-Generate/issues"
+    "url": "https://github.com/wyf0931/mflux-webui/issues"
   },
-  "homepage": "https://github.com/wyf0931/Ollama-WebUI-for-Image-Generate#readme",
+  "homepage": "https://github.com/wyf0931/mflux-webui#readme",
   "devDependencies": {
     "@tailwindcss/cli": "^4.3.3",
     "daisyui": "^5.7.17",
