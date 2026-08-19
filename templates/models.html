@@ -1,35 +1,10 @@
 {% extends "base.html" %}
-{% block title %}本地模型 - mflux WebUI{% endblock %}
+{% block title %}模型库 - mflux WebUI{% endblock %}
 {% block content %}
-<section class="max-w-[1200px] mx-auto">
-    <header class="mb-8">
-        <div class="flex items-start justify-between gap-4">
-            <div class="min-w-0"><p class="text-xs font-medium tracking-[0.16em] uppercase text-text-muted">Model library</p><h1 class="mt-2 text-3xl sm:text-4xl font-bold">本地模型缓存</h1></div>
-            <button id="refresh" type="button" class="shrink-0 w-11 h-11 grid place-items-center rounded-xl border border-border bg-bg-secondary text-text-secondary hover:border-primary hover:shadow-sm transition-all" aria-label="刷新模型信息" title="刷新模型信息"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 5v4h4m-4 4a8.1 8.1 0 0 0 15.5 2M20 19v-4h-4"/></svg><span class="sr-only">刷新</span></button>
-        </div>
-        <p class="max-w-2xl text-text-muted mt-3 leading-relaxed">仅展示 mflux 支持的图像生成模型。刷新会同步 Hugging Face 公开资料，不会下载模型权重。</p>
-        <p id="summary" class="hidden mt-4 text-sm text-text-secondary"></p>
-    </header>
-    <div id="error" class="hidden p-4 mb-5 rounded-lg bg-red-500 text-white"></div>
-    <div id="empty" class="hidden text-center py-16 bg-bg-secondary border border-border rounded-xl text-text-muted">尚未发现 mflux 支持的图像模型缓存。</div>
-    <div id="models" class="grid grid-cols-1 md:grid-cols-2 gap-5"></div>
+<section x-data="modelLibrary" class="mx-auto max-w-[1400px]">
+  <div x-show="error" x-cloak role="alert" class="alert alert-error mb-5" x-text="error"></div>
+  <section x-show="tasks.length" x-cloak class="mb-8"><h2 class="mb-3 text-lg font-semibold">下载任务</h2><div class="grid gap-3"><template x-for="task in tasks" :key="task.repoId"><div class="card border border-base-300 bg-base-100"><div class="card-body p-4"><p class="font-medium break-all" x-text="task.repoId"></p><p class="text-sm text-base-content/60" x-text="taskLabel(task)"></p><button x-show="task.status === 'downloading'" @click="cancel(task.repoId)" class="btn btn-outline btn-sm w-fit">取消</button></div></div></template></div></section>
+  <section><div class="flex items-start justify-between gap-4"><div><h1 class="text-xl font-semibold">推荐模型</h1><p class="mt-1 text-sm text-base-content/60">4-bit 优先，下载到 Hugging Face 本地缓存，不会覆盖已有权重。</p></div><button @click="load" class="btn btn-square btn-outline btn-sm" aria-label="刷新模型库">↻</button></div><div id="catalog" class="mt-4 grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3"><template x-for="model in catalogItems" :key="model.repoId"><div class="card border border-base-300 bg-base-100 shadow-sm"><div class="card-body p-5"><div class="flex justify-between gap-3"><div class="min-w-0"><p class="text-xs text-base-content/60" x-text="model.family"></p><h3 class="mt-2 font-semibold break-words" x-text="model.name"></h3></div><span class="badge badge-sm shrink-0" :class="model.installed ? 'badge-success' : 'badge-ghost'" x-text="model.installed ? '已安装' : '未安装'"></span></div><p class="mt-4 text-sm text-base-content/60" x-text="model.sizeGB + ' GB · 默认 ' + model.steps + ' 步 · 文生图、图生图'"></p><div class="card-actions mt-5 items-center justify-between"><a class="link link-hover text-sm" :href="'https://huggingface.co/' + model.repoId" target="_blank">在 HF 查看 ↗</a><button x-show="!model.installed" @click="download(model.repoId)" class="btn btn-primary btn-sm">下载</button></div></div></div></template></div></section>
+  <section class="mt-10"><h2 class="text-xl font-semibold">已安装</h2><p class="mt-1 text-sm text-base-content/60" x-text="'已安装 ' + installedItems.length + ' 个可用模型'"></p><div id="installed" class="mt-4 grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3"><template x-for="model in installedItems" :key="model.repoId"><div class="card border border-base-300 bg-base-100 shadow-sm"><div class="card-body p-5"><div class="flex justify-between gap-3"><div class="min-w-0"><p class="text-xs text-base-content/60" x-text="model.family"></p><h3 class="mt-2 font-semibold break-words" x-text="model.repoId"></h3></div><span class="badge badge-success badge-sm">已安装</span></div><p class="mt-4 text-sm text-base-content/60" x-text="(model.size / 1024 / 1024 / 1024).toFixed(1) + ' GB · ' + model.files + ' 个缓存文件'"></p><p class="text-xs text-base-content/60" x-text="'最近访问：' + (model.lastAccessed || '—')"></p></div></div></template></div><div x-show="!installedItems.length" x-cloak class="alert mt-4">尚未安装可用的 mflux 图像模型。</div></section>
 </section>
-<script>
-function formatSize(bytes) { if (!bytes) return '0 B'; const units = ['B', 'KB', 'MB', 'GB']; const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1); return `${(bytes / 1024 ** index).toFixed(index ? 1 : 0)} ${units[index]}`; }
-function formatNumber(value) { return typeof value === 'number' ? new Intl.NumberFormat('zh-CN', { notation: 'compact', maximumFractionDigits: 1 }).format(value) : '—'; }
-function detail(label, value) { return `<div><dt class="text-xs text-text-muted">${label}</dt><dd class="mt-1 font-medium text-text-secondary"></dd></div>`; }
-async function loadCache() {
-    const response = await fetch('/api/models/cache'); const data = await response.json();
-    const container = document.getElementById('models'); container.innerHTML = '';
-    const error = document.getElementById('error'); error.classList.toggle('hidden', !data.error); error.textContent = data.error || '';
-    document.getElementById('empty').classList.toggle('hidden', data.models.length !== 0);
-    const summary = document.getElementById('summary'); summary.classList.toggle('hidden', data.models.length === 0); summary.textContent = data.models.length ? `已发现 ${data.models.length} 个可用的 mflux 图像模型` : '';
-    data.models.forEach(model => {
-        const card = document.createElement('a'); card.href = `https://huggingface.co/${encodeURIComponent(model.repoId).replace('%2F', '/')}`; card.target = '_blank'; card.rel = 'noopener noreferrer'; card.className = 'group block bg-bg-secondary border border-border rounded-2xl p-5 sm:p-6 hover:border-primary hover:shadow-md transition-all'; card.title = `在 Hugging Face 中打开 ${model.repoId}`;
-        card.innerHTML = `<div class="flex items-start justify-between gap-4"><div class="min-w-0"><p class="model-meta text-xs font-medium text-text-muted"></p><h2 class="mt-2 break-words font-semibold text-lg text-text-secondary"></h2></div><span class="shrink-0 inline-flex items-center gap-1 rounded-full bg-bg-tertiary px-2.5 py-1 text-xs text-text-secondary">已缓存</span></div><dl class="mt-6 grid grid-cols-2 gap-x-5 gap-y-5 border-y border-border-light py-5">${detail('本地占用')}${detail('缓存文件')}${detail('Hub 下载')}${detail('点赞')}</dl><div class="mt-5 flex items-end justify-between gap-4"><div class="min-w-0 text-xs text-text-muted"><p>当前修订：<span class="model-revision"></span></p><p class="mt-1">最近访问：<span class="model-accessed"></span></p></div><span class="shrink-0 text-sm text-text-secondary group-hover:underline">在 HF 查看 ↗</span></div>`;
-        const values = card.querySelectorAll('dd'); card.querySelector('h2').textContent = model.repoId; card.querySelector('.model-meta').textContent = [model.family, model.pipelineTag, model.library].filter(Boolean).join(' · '); values[0].textContent = formatSize(model.size); values[1].textContent = model.files; values[2].textContent = formatNumber(model.downloads); values[3].textContent = formatNumber(model.likes); card.querySelector('.model-revision').textContent = model.revision || '—'; card.querySelector('.model-accessed').textContent = model.lastAccessed || model.lastModified || '—'; container.appendChild(card);
-    });
-}
-document.getElementById('refresh').onclick = loadCache; loadCache();
-</script>
 {% endblock %}

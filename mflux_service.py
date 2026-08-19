@@ -6,7 +6,11 @@ from pathlib import Path
 import time
 
 from mflux.models.common.config import ModelConfig
+from mflux.models.flux2 import Flux2Klein
 from mflux.models.krea2 import Krea2
+from mflux.models.z_image import ZImageTurbo
+
+from model_registry import get_model_spec
 
 
 MODEL_ID = "mflux-community/krea-2-turbo-mflux-q4"
@@ -29,9 +33,13 @@ class GenerationResult:
 class MfluxService:
     """通过 mflux 的 Krea 2 Python API 生成图片。"""
 
-    def __init__(self, images_dir):
+    def __init__(self, images_dir, model_id=MODEL_ID):
         self.images_dir = Path(images_dir)
         self.images_dir.mkdir(parents=True, exist_ok=True)
+        self.model_id = model_id
+        self.spec = get_model_spec(model_id)
+        if not self.spec:
+            raise ValueError("暂不支持该模型")
 
     @staticmethod
     def validate_params(width, height, image_strength=None):
@@ -52,17 +60,24 @@ class MfluxService:
                 raise ValueError("参考图强度必须在 0 到 1 之间")
         return {"width": width, "height": height, "image_strength": image_strength}
 
-    @staticmethod
-    def _load_model():
+    def _load_model(self):
         """以 mflux 的 Krea 2 配置加载已缓存的量化模型。"""
-        return Krea2(model_config=ModelConfig.krea2(), model_path=MODEL_ID)
+        if self.spec.backend == "krea2":
+            return Krea2(model_config=ModelConfig.krea2(), model_path=self.model_id)
+        if self.spec.backend == "zimage":
+            return ZImageTurbo(model_path=self.model_id)
+        if self.spec.backend == "flux2-4b":
+            return Flux2Klein(model_config=ModelConfig.flux2_klein_4b(), model_path=self.model_id)
+        if self.spec.backend == "flux2-9b":
+            return Flux2Klein(model_config=ModelConfig.flux2_klein_9b(), model_path=self.model_id)
+        raise ValueError("暂不支持该模型")
 
     def generate(self, prompt, width, height, seed=None, steps=None, guidance=None,
                  input_image=None, image_strength=None):
         image_strength = image_strength if input_image and image_strength not in (None, "") else None
         validated = self.validate_params(width, height, image_strength)
-        steps = int(steps if steps not in (None, "") else DEFAULTS["steps"])
-        guidance = float(guidance if guidance not in (None, "") else DEFAULTS["guidance"])
+        steps = int(steps if steps not in (None, "") else self.spec.steps)
+        guidance = float(guidance if guidance not in (None, "") else (self.spec.guidance if self.spec.guidance is not None else DEFAULTS["guidance"]))
         seed = int(seed if seed not in (None, "") else time.time_ns() % 1_000_000_000)
 
         filename = f"{datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f')}.png"
@@ -79,7 +94,7 @@ class MfluxService:
                 guidance=guidance,
                 image_path=input_image,
                 image_strength=validated["image_strength"],
-                scheduler="er_sde",
+                scheduler=self.spec.scheduler,
             )
             image.save(output_path)
         except Exception as exc:
@@ -90,9 +105,9 @@ class MfluxService:
 
         return GenerationResult(
             image_path=str(output_path), filename=filename,
-            duration=time.monotonic() - started_at, model=MODEL_ID,
+            duration=time.monotonic() - started_at, model=self.model_id,
             width=validated["width"], height=validated["height"], prompt=prompt,
             metadata={"seed": seed, "steps": steps, "guidance": guidance,
-                      "scheduler": "er_sde",
+                      "scheduler": self.spec.scheduler,
                       "imageStrength": validated["image_strength"] if input_image else None},
         )

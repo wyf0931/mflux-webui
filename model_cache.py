@@ -71,8 +71,11 @@ def get_hub_metadata(repo_id):
     }
 
 
-def get_cached_models():
-    """返回已缓存且可由 mflux 使用的图像生成模型。"""
+def get_cached_models(include_hub_metadata=True):
+    """返回已缓存且可由 mflux 使用的图像生成模型。
+
+    模型选择等即时交互只需本地信息，可跳过 Hub 网络查询。
+    """
     try:
         cache_info = scan_cache_dir()
     except Exception as exc:
@@ -84,7 +87,7 @@ def get_cached_models():
             continue
         revisions = list(repo.revisions)
         newest_revision = max(revisions, key=lambda revision: revision.last_modified, default=None)
-        models.append({
+        model = {
             "repoId": repo.repo_id,
             "repoType": repo.repo_type,
             "size": repo.size_on_disk,
@@ -94,6 +97,8 @@ def get_cached_models():
             "lastAccessed": repo.last_accessed_str,
             "lastModified": repo.last_modified_str,
             "revision": newest_revision.commit_hash[:8] if newest_revision else None,
-            **get_hub_metadata(repo.repo_id),
-        })
+        }
+        if include_hub_metadata:
+            model.update(get_hub_metadata(repo.repo_id))
+        models.append(model)
     return {"models": sorted(models, key=lambda item: item["repoId"].lower()), "error": None}

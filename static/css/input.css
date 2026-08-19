@@ -1,0 +1,33 @@
+@import "tailwindcss";
+@plugin "daisyui" {
+  themes: light --default, dark;
+}
+
+@theme {
+  --font-sans: "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: "Syne", sans-serif;
+}
+
+[data-theme="light"] {
+  --color-primary: #3b82f6;
+  --color-primary-content: #ffffff;
+  --color-base-100: #ffffff;
+  --color-base-200: #f8f9fc;
+  --color-base-300: #e5e7eb;
+  --color-base-content: #1f2937;
+}
+
+[data-theme="dark"] {
+  --color-primary: #5b8cff;
+  --color-primary-content: #ffffff;
+  --color-base-100: #161b22;
+  --color-base-200: #0d1117;
+  --color-base-300: #30363d;
+  --color-base-content: #e6edf3;
+}
+
+body { min-height: 100vh; }
+[x-cloak] { display: none !important; }
+h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); }
+
+.gradient-text { background: linear-gradient(135deg, var(--color-primary), #a78bfa); -webkit-background-clip: text; background-clip: text; color: transparent; }

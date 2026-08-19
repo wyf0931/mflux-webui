@@ -1,14 +1,14 @@
 # 🎨 mflux WebUI
 
-一个基于 Flask 的本地 mflux 图像生成界面。V1 专注于 **Krea 2 Turbo**：支持文生图、文 + 图生图、生成画廊，以及本机 Hugging Face（HF）模型缓存查看。
+一个基于 Flask 的本地 mflux 图像生成界面。支持 Krea 2 Turbo、Z-Image Turbo 与 FLUX.2 Klein 的模型库管理、文生图、文 + 图生图和画廊。
 
 ## 功能
 
-- 固定使用 `mflux-community/krea-2-turbo-mflux-q4`
+- 模型库：受控推荐、后台下载、已安装缓存与 Hugging Face 页面跳转
 - 文生图：提示词、尺寸、步数、随机种子和引导系数
 - 文 + 图生图：上传 PNG、JPG、JPEG 或 WebP 参考图，设置 0–1 的参考图强度
 - 画廊：浏览、按模型筛选、打开原图、删除历史图片
-- 本地模型：通过 Hugging Face SDK 只读扫描缓存，不联网、不下载
+- 本地模型：通过 Hugging Face SDK 管理缓存与下载
 - 深色模式和移动端布局
 
 ## 环境要求
@@ -21,6 +21,8 @@
 
 ```bash
 uv sync
+npm install
+npm run build
 uv run python app.py
 ```
 
@@ -47,16 +49,7 @@ uv run python app.py
 
 上传参考图，设定参考图强度后输入提示词。例如，强度为 `0.35` 时，模型会较明显保留原图构图，同时按提示词改写内容。
 
-应用实际调用的 mflux 命令等价于：
-
-```bash
-mflux-generate-krea2 \
-  --model mflux-community/krea-2-turbo-mflux-q4 \
-  --image /path/to/input.png 0.35 \
-  --prompt "把黑色的上衣换为淡紫色丝绸质感的吊带衫睡衣" \
-  --steps 12 --seed 42 \
-  --output /path/to/output.png
-```
+应用通过 mflux Python API 调用模型，避免依赖外部命令进程。
 
 上传的参考图仅作为临时文件使用，生成结束后会自动删除。
 
@@ -72,7 +65,23 @@ mflux-generate-krea2 \
 ## 开发检查
 
 ```bash
-python -m unittest discover -s tests
+uv run python -m unittest discover -s tests
 uv lock --check
-python -m compileall app.py db.py mflux_service.py model_cache.py
+npm run build
+uv run python -m compileall app.py api.py db.py mflux_service.py model_cache.py
 ```
+
+## 架构
+
+- Flask：页面壳、静态资源与 `/api` Blueprint 装配。
+- Alpine.js：页面局部状态、表单、模型下载状态与画廊交互。
+- Tailwind CSS + DaisyUI：统一视觉组件。
+- mflux + Hugging Face Hub SDK：本地推理、缓存扫描与模型下载。
+
+所有 API 统一返回以下 JSON 结构：
+
+```json
+{ "code": 0, "data": {}, "message": "ok" }
+```
+
+`code = 0` 表示成功；`data` 可为对象、数组或 `null`；非零 `code` 表示业务错误。

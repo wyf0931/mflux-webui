@@ -13,6 +13,7 @@ logs/
 CLAUDE.md
 .planning/*
 .playwright-cli/
+node_modules/
 
 # Data files
 data/*.json
