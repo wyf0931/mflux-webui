@@ -1,5 +1,5 @@
 {
-  "name": "ollama-image-generate-ui",
+  "name": "mflux-webui",
   "version": "1.0.0",
   "description": "一个基于 Flask 的本地 mflux 图像生成界面。V1 专注于 **Krea 2 Turbo**：支持文生图、文 + 图生图、生成画廊，以及本机 Hugging Face（HF）模型缓存查看。",
   "main": "index.js",

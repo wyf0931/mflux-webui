@@ -22,6 +22,10 @@ start() {
         echo "启动失败：端口 8090 已被 PID $PORT_PID 占用"
         exit 1
     fi
+    if [ -f "$ROOT_DIR/package.json" ]; then
+        echo "构建前端资源…"
+        (cd "$ROOT_DIR" && npm run build >/dev/null)
+    fi
     (
         cd "$ROOT_DIR"
         nohup uv run python app.py >>"$LOG_FILE" 2>&1 &

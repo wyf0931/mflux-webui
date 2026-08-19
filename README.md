@@ -11,6 +11,12 @@
 - 本地模型：通过 Hugging Face SDK 管理缓存与下载
 - 深色模式和移动端布局
 
+## 界面
+
+| 生图 | 画廊 | 模型库 |
+| --- | --- | --- |
+| ![生图页面](docs/images/generate.png) | ![画廊页面](docs/images/gallery.png) | ![模型库页面](docs/images/models.png) |
+
 ## 环境要求
 
 - macOS Apple Silicon 与 Python 3.11+
