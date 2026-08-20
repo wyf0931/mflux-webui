@@ -50,11 +50,14 @@ For background operation:
 ```bash
 ./ops.sh start
 ./ops.sh status
+./ops.sh status --watch
+./ops.sh logs
 ./ops.sh restart
 ./ops.sh stop
 ```
 
 Logs are written to `logs/app.log`; the process ID is written to `logs/app.pid`.
+`status --watch` refreshes process CPU, memory, and platform GPU utilization every five seconds. `logs` follows the latest application log without writing monitor output to the log file.
 
 ## Model repositories
 
@@ -89,6 +92,10 @@ Upload a PNG, JPG, JPEG, or WebP reference image and choose an image strength fr
 ### Model library
 
 The model page shows installed models first. The recommendation section provides Hugging Face and ModelScope tabs, repository links, download progress, and cancellation for active downloads.
+
+### Generation feedback
+
+mflux returns a complete image after inference. It does not expose an intermediate image stream through the current Python API, so the generation page shows an elapsed-time indicator while the request is running and displays the image when inference completes.
 
 ## Data locations
 

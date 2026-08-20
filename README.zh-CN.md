@@ -50,11 +50,14 @@ uv run python app.py
 ```bash
 ./ops.sh start
 ./ops.sh status
+./ops.sh status --watch
+./ops.sh logs
 ./ops.sh restart
 ./ops.sh stop
 ```
 
 日志写入 `logs/app.log`，进程 ID 写入 `logs/app.pid`。
+`status --watch` 每 5 秒刷新进程 CPU、内存和平台支持的 GPU 使用率；`logs` 会显示最近日志并持续跟踪，不会把监控输出写入日志文件。
 
 ## 模型配置与渠道
 
@@ -89,6 +92,10 @@ cp .env.example .env
 ### 模型库
 
 模型页首先展示已安装模型。推荐模型区域提供 Hugging Face 和 ModelScope 两个 Tab，支持查看仓库、下载、查看进度和取消任务。
+
+### 生图反馈
+
+mflux 当前 Python API 会在完整推理结束后返回最终图片，没有提供中间图片流式输出接口。因此生图页面会在请求期间显示已耗时，推理完成后再显示最终图片。
 
 ## 数据位置
 

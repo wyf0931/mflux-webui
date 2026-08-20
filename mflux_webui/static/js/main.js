@@ -28,7 +28,7 @@ Alpine.data("theme", () => ({
 }));
 
 Alpine.data("generationPage", () => ({
-  models: [], result: null, error: "", submitting: false, showAdvanced: false, imageName: "选择参考图",
+  models: [], result: null, error: "", submitting: false, showAdvanced: false, imageName: "选择参考图", elapsedSeconds: 0, elapsedTimer: null,
   form: { modelId: "", prompt: "", width: 768, height: 1376, steps: 8, guidance: "", seed: "", imageStrength: 0.35 },
   preset: "portrait-9-16",
   presets: [
@@ -48,15 +48,18 @@ Alpine.data("generationPage", () => ({
   applyPreset() { if (!this.selectedPreset) return; this.form.width = this.selectedPreset.width; this.form.height = this.selectedPreset.height; },
   syncPreset() { const matched = this.presets.find((preset) => preset.width === this.form.width && preset.height === this.form.height); this.preset = matched ? matched.id : "custom"; },
   chooseImage(event) { const file = event.target.files[0]; this.imageName = file ? file.name : "选择参考图"; },
+  startElapsed() { this.elapsedSeconds = 0; this.elapsedTimer = window.setInterval(() => { this.elapsedSeconds += 1; }, 1000); },
+  stopElapsed() { if (this.elapsedTimer) window.clearInterval(this.elapsedTimer); this.elapsedTimer = null; },
+  elapsedLabel() { const minutes = Math.floor(this.elapsedSeconds / 60); const seconds = this.elapsedSeconds % 60; return minutes ? `${minutes}分${String(seconds).padStart(2, "0")}秒` : `${seconds}秒`; },
   async submit() {
-    this.error = ""; this.submitting = true;
+    this.error = ""; this.result = null; this.submitting = true; this.startElapsed();
     try {
       const body = new FormData(this.$refs.form);
       if (!this.$refs.image.files.length) { body.delete("image"); body.delete("imageStrength"); }
       if (!body.get("guidance")) body.delete("guidance"); if (!body.get("seed")) body.delete("seed");
       const result = await apiClient.request("/api/generate", { method: "POST", body });
       this.result = result;
-    } catch (error) { this.error = error.message; } finally { this.submitting = false; }
+    } catch (error) { this.error = error.message; } finally { this.submitting = false; this.stopElapsed(); }
   },
 }));
 
