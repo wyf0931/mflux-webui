@@ -57,7 +57,7 @@ For background operation:
 ```
 
 Logs are written to `logs/app.log`; the process ID is written to `logs/app.pid`.
-`status --watch` refreshes process CPU, memory, and platform GPU utilization every five seconds. `logs` follows the latest application log without writing monitor output to the log file.
+`status --watch` refreshes the process PID and uptime every five seconds. `logs` follows the latest application log without writing monitor output to the log file.
 
 ## Model repositories
 

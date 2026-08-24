@@ -57,7 +57,7 @@ uv run python app.py
 ```
 
 日志写入 `logs/app.log`，进程 ID 写入 `logs/app.pid`。
-`status --watch` 每 5 秒刷新进程 CPU、内存和平台支持的 GPU 使用率；`logs` 会显示最近日志并持续跟踪，不会把监控输出写入日志文件。
+`status --watch` 每 5 秒刷新进程 PID 和运行时长；`logs` 会显示最近日志并持续跟踪，不会把监控输出写入日志文件。
 
 ## 模型配置与渠道
 
