@@ -28,7 +28,7 @@ Alpine.data("theme", () => ({
 }));
 
 Alpine.data("generationPage", () => ({
-  models: [], result: null, error: "", submitting: false, showAdvanced: false, imageName: "选择参考图", elapsedSeconds: 0, elapsedTimer: null,
+  models: [], result: null, error: "", submitting: false, showAdvanced: false, imageName: "选择参考图", elapsedSeconds: 0, elapsedTimer: null, reuseNotice: "",
   form: { modelId: "", prompt: "", width: 768, height: 1376, steps: 8, guidance: "", seed: "", imageStrength: 0.35 },
   preset: "portrait-9-16",
   presets: [
@@ -44,7 +44,28 @@ Alpine.data("generationPage", () => ({
   ],
   get selectedModel() { return this.models.find((model) => model.repoId === this.form.modelId); },
   get selectedPreset() { return this.presets.find((preset) => preset.id === this.preset); },
-  async init() { try { this.models = (await apiClient.get("/api/models/catalog")).filter((model) => model.installed); this.form.modelId = this.models[0]?.repoId || ""; } catch (error) { this.error = error.message; } },
+  async init() { try { this.models = (await apiClient.get("/api/models/catalog")).filter((model) => model.installed); this.form.modelId = this.models[0]?.repoId || ""; this.applyReuseParams(); } catch (error) { this.error = error.message; } },
+  applyReuseParams() {
+    const stored = localStorage.getItem("mflux.reuseGeneration");
+    if (!stored) return;
+    localStorage.removeItem("mflux.reuseGeneration");
+    try {
+      const params = JSON.parse(stored);
+      this.form.modelId = params.modelId || this.form.modelId;
+      this.form.prompt = params.prompt || "";
+      this.form.width = Number(params.width) || this.form.width;
+      this.form.height = Number(params.height) || this.form.height;
+      this.form.steps = Number(params.steps) || this.form.steps;
+      this.form.guidance = params.guidance ?? "";
+      this.form.seed = params.seed ?? "";
+      if (params.imageStrength !== null && params.imageStrength !== undefined) this.form.imageStrength = Number(params.imageStrength);
+      this.showAdvanced = Boolean(this.form.guidance || this.form.seed || params.hasReference);
+      this.syncPreset();
+      if (params.hasReference) this.reuseNotice = "已恢复参数；出于浏览器安全限制，参考图文件需要重新选择。";
+    } catch (_error) {
+      this.reuseNotice = "历史参数读取失败，请手动填写生成参数。";
+    }
+  },
   applyPreset() { if (!this.selectedPreset) return; this.form.width = this.selectedPreset.width; this.form.height = this.selectedPreset.height; },
   syncPreset() { const matched = this.presets.find((preset) => preset.width === this.form.width && preset.height === this.form.height); this.preset = matched ? matched.id : "custom"; },
   chooseImage(event) { const file = event.target.files[0]; this.imageName = file ? file.name : "选择参考图"; },
@@ -64,11 +85,11 @@ Alpine.data("generationPage", () => ({
 }));
 
 Alpine.data("modelLibrary", () => ({
-  catalog: [], cached: [], tasks: [], error: "", timer: null, activeSource: "huggingface",
+  catalog: [], cached: [], tasks: [], error: "", timer: null, activeSource: "huggingface", loading: true,
   get availableSources() { return [...new Set(this.catalog.map((model) => model.source))]; },
   get catalogItems() { return this.catalog.filter((model) => model.source === this.activeSource); },
   get installedItems() { return this.cached; },
-  async init() { await this.load(); this.timer = window.setInterval(() => this.load(), 2000); },
+  async init() { await this.load(); this.loading = false; this.timer = window.setInterval(() => this.load(), 2000); },
   async load() { try { const [catalog, cached, tasks] = await Promise.all([apiClient.get("/api/models/catalog"), apiClient.get("/api/models/cache"), apiClient.get("/api/models/downloads")]); this.catalog = catalog; this.cached = cached; this.tasks = tasks; if (!this.availableSources.includes(this.activeSource)) this.activeSource = this.availableSources[0] || "huggingface"; this.error = ""; } catch (error) { this.error = error.message; } },
   taskFor(repoId, source = "huggingface") { return this.tasks.find((task) => task.repoId === repoId && task.source === source); },
   isDownloading(repoId, source) { return ["queued", "downloading", "cancelling"].includes((this.taskFor(repoId, source) || {}).status); },
@@ -86,6 +107,15 @@ Alpine.data("galleryPage", () => ({
   get models() { return ["all", ...new Set(this.images.map((image) => image.model))]; },
   get filteredImages() { return this.selected === "all" ? this.images : this.images.filter((image) => image.model === this.selected); },
   label(model) { return model === "all" ? "全部" : model === "mflux-community/krea-2-turbo-mflux-q4" ? "Krea 2 Turbo" : model; },
+  reuse(image) {
+    const metadata = image.metadata || {};
+    localStorage.setItem("mflux.reuseGeneration", JSON.stringify({
+      modelId: image.model, prompt: image.prompt, width: image.width, height: image.height,
+      steps: metadata.steps, guidance: metadata.guidance, seed: metadata.seed,
+      imageStrength: metadata.imageStrength, hasReference: metadata.imageStrength !== null && metadata.imageStrength !== undefined,
+    }));
+    window.location.href = "/";
+  },
   async remove(timestamp) { if (!confirm("确定要删除这张图片吗？此操作无法撤销。")) return; try { await apiClient.delete(`/api/history/${timestamp}`); this.images = this.images.filter((image) => image.timestamp !== timestamp); } catch (error) { this.error = error.message; } },
   async copy(prompt) { try { await navigator.clipboard.writeText(prompt); } catch (_error) { const area = document.createElement("textarea"); area.value = prompt; document.body.append(area); area.select(); document.execCommand("copy"); area.remove(); } },
   formatDuration, formatTimestamp,

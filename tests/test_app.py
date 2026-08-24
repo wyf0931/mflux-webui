@@ -84,3 +84,13 @@ class ApiTest(unittest.TestCase):
     def test_formatters(self):
         self.assertEqual(self.app.jinja_env.filters["timestamp"]("2026-03-30-16-24-59"), "2026-03-30 16:24:59")
         self.assertEqual(self.app.jinja_env.filters["duration"](212.4), "3分32.4秒")
+
+    def test_gallery_exposes_reuse_generation_action(self):
+        response = self.client.get("/gallery")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("使用此参数重新生成".encode(), response.data)
+
+    def test_models_page_exposes_initial_scan_loading_state(self):
+        response = self.client.get("/models")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("正在识别本地模型".encode(), response.data)

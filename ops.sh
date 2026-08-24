@@ -13,13 +13,19 @@ port_owner() {
     lsof -tiTCP:8090 -sTCP:LISTEN 2>/dev/null | head -n 1
 }
 
+port_is_in_use() {
+    PORT_PID=$(port_owner || true)
+    [ -n "$PORT_PID" ] && return 0
+    command -v curl >/dev/null 2>&1 && curl -fsS --max-time 1 http://127.0.0.1:8090/ >/dev/null 2>&1
+}
+
 start() {
     if is_running; then echo "mflux WebUI 已运行（PID $(cat "$PID_FILE")）"; return; fi
     mkdir -p "$ROOT_DIR/logs"
     rm -f "$PID_FILE"
-    PORT_PID=$(port_owner || true)
-    if [ -n "$PORT_PID" ]; then
-        echo "启动失败：端口 8090 已被 PID $PORT_PID 占用"
+    if port_is_in_use; then
+        PORT_PID=$(port_owner || true)
+        echo "启动失败：端口 8090 已被现有服务占用${PORT_PID:+（PID $PORT_PID）}"
         exit 1
     fi
     if [ -f "$ROOT_DIR/package.json" ]; then
@@ -32,7 +38,7 @@ start() {
         echo $! >"$PID_FILE"
     )
     sleep 1
-    if is_running; then echo "mflux WebUI 已启动：http://127.0.0.1:8090（PID $(cat "$PID_FILE")）"; else echo "启动失败，请查看 $LOG_FILE"; exit 1; fi
+    if is_running || port_is_in_use; then echo "mflux WebUI 已启动：http://127.0.0.1:8090（PID $(cat "$PID_FILE")）"; else echo "启动失败，请查看 $LOG_FILE"; exit 1; fi
 }
 
 stop() {
@@ -49,54 +55,21 @@ logs() {
     tail -n "$lines" -f "$LOG_FILE"
 }
 
-gpu_usage() {
-    if command -v ioreg >/dev/null 2>&1; then
-        value=$(ioreg -r -d 1 -c IOAccelerator -k PerformanceStatistics 2>/dev/null \
-            | grep -m1 'Device Utilization' \
-            | sed -E 's/.*"Device Utilization %"=([0-9]+).*/\1%/' || true)
-        [ -n "$value" ] && { echo "$value"; return; }
-    fi
-    if command -v nvidia-smi >/dev/null 2>&1; then
-        nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits 2>/dev/null \
-            | head -n 1 | awk '{print $1 "%"}'
-        return
-    fi
-    echo "n/a"
-}
-
-memory_usage() {
-    if command -v vm_stat >/dev/null 2>&1 && command -v sysctl >/dev/null 2>&1; then
-        page_size=$(vm_stat | sed -n 's/.*page size of \([0-9][0-9]*\) bytes.*/\1/p' | head -n 1)
-        total_bytes=$(sysctl -n hw.memsize 2>/dev/null || true)
-        if [ -n "$page_size" ] && [ -n "$total_bytes" ]; then
-            free_pages=$(vm_stat | awk '/Pages free|Pages inactive|Pages speculative|Pages purgeable/ {gsub("\\.", "", $2); total += $2} END {print total + 0}')
-            used_bytes=$((total_bytes - free_pages * page_size))
-            awk -v used="$used_bytes" -v total="$total_bytes" 'BEGIN { printf "%.1f%%", used / total * 100 }'
-            return
-        fi
-    fi
-    echo "n/a"
-}
-
 status_snapshot() {
     if ! is_running; then
         echo "mflux WebUI 未运行"
         return 1
     fi
     APP_PID=$(cat "$PID_FILE")
-    app_cpu=$(ps -p "$APP_PID" -o %cpu= 2>/dev/null | awk '{print $1}')
-    app_mem=$(ps -p "$APP_PID" -o %mem= 2>/dev/null | awk '{print $1}')
     app_elapsed=$(ps -p "$APP_PID" -o etime= 2>/dev/null | sed 's/^ *//')
     printf 'mflux WebUI 运行中  PID=%s  uptime=%s\n' "$APP_PID" "${app_elapsed:-n/a}"
-    printf '进程资源        CPU=%s%%  MEM=%s%%\n' "${app_cpu:-n/a}" "${app_mem:-n/a}"
-    printf '系统资源        MEM=%s  GPU=%s\n' "$(memory_usage)" "$(gpu_usage)"
-    printf '提示：生成期间可使用 "%s status --watch" 每 5 秒刷新一次。\n' "$0"
+    printf '提示：使用 "%s status --watch" 每 5 秒刷新进程状态。\n' "$0"
 }
 
 status_watch() {
     while :; do
         clear 2>/dev/null || true
-        printf 'mflux WebUI resource monitor  %s\n\n' "$(date '+%Y-%m-%d %H:%M:%S')"
+        printf 'mflux WebUI process monitor  %s\n\n' "$(date '+%Y-%m-%d %H:%M:%S')"
         status_snapshot || return 1
         sleep 5
     done
