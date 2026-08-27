@@ -1,12 +1,13 @@
 """mflux WebUI Flask 应用工厂与页面路由。"""
 
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 from flask import Flask, render_template, request, send_from_directory
 
 from .api import api as _api
 from .api import failure
+from .generation_tasks import GenerationTaskManager
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
@@ -18,12 +19,13 @@ def create_app():
     images_dir.mkdir(parents=True, exist_ok=True)
     app.config["IMAGES_DIR"] = str(images_dir)
     app.register_blueprint(_api)
+    app.extensions["generation_task_manager"] = GenerationTaskManager(images_dir)
 
     @app.template_filter("timestamp")
     def format_timestamp(value):
         for pattern in ("%Y-%m-%d-%H-%M-%S-%f", "%Y-%m-%d-%H-%M-%S"):
             try:
-                return datetime.strptime(value, pattern).strftime("%Y-%m-%d %H:%M:%S")
+                return datetime.strptime(value, pattern).replace(tzinfo=UTC).strftime("%Y-%m-%d %H:%M:%S")
             except (TypeError, ValueError):
                 continue
         return value
@@ -53,6 +55,10 @@ def create_app():
     @app.get("/models")
     def models():
         return render_template("models.html")
+
+    @app.get("/queue")
+    def generation_queue():
+        return render_template("queue.html")
 
     @app.get("/static/images/<filename>")
     def serve_image(filename):

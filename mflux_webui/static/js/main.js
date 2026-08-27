@@ -20,6 +20,7 @@ const formatDuration = (value) => {
   return minutes < 60 ? `${minutes}分${remaining.toFixed(1)}秒` : `${Math.floor(minutes / 60)}时${minutes % 60}分${remaining.toFixed(1)}秒`;
 };
 const formatTimestamp = (value) => value ? value.replace(/^(\d{4})-(\d{2})-(\d{2})-(\d{2})-(\d{2})-(\d{2}).*$/, "$1-$2-$3 $4:$5:$6") : "—";
+const formatDateTime = (value) => value ? new Date(value).toLocaleString("zh-CN", { hour12: false }) : "—";
 
 Alpine.data("theme", () => ({
   current: localStorage.getItem("theme") || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"),
@@ -28,7 +29,7 @@ Alpine.data("theme", () => ({
 }));
 
 Alpine.data("generationPage", () => ({
-  models: [], result: null, error: "", submitting: false, showAdvanced: false, imageName: "选择参考图", elapsedSeconds: 0, elapsedTimer: null, reuseNotice: "",
+  models: [], result: null, error: "", submitting: false, task: null, pollTimer: null, showAdvanced: false, imageName: "选择参考图", elapsedSeconds: 0, elapsedTimer: null, reuseNotice: "",
   form: { modelId: "", prompt: "", width: 768, height: 1376, steps: 8, guidance: "", seed: "", imageStrength: 0.35 },
   preset: "portrait-9-16",
   presets: [
@@ -71,16 +72,36 @@ Alpine.data("generationPage", () => ({
   chooseImage(event) { const file = event.target.files[0]; this.imageName = file ? file.name : "选择参考图"; },
   startElapsed() { this.elapsedSeconds = 0; this.elapsedTimer = window.setInterval(() => { this.elapsedSeconds += 1; }, 1000); },
   stopElapsed() { if (this.elapsedTimer) window.clearInterval(this.elapsedTimer); this.elapsedTimer = null; },
+  stopPolling() { if (this.pollTimer) window.clearInterval(this.pollTimer); this.pollTimer = null; },
   elapsedLabel() { const minutes = Math.floor(this.elapsedSeconds / 60); const seconds = this.elapsedSeconds % 60; return minutes ? `${minutes}分${String(seconds).padStart(2, "0")}秒` : `${seconds}秒`; },
+  etaLabel(value) { return value === null || value === undefined ? "等待中" : value <= 0 ? "即将开始" : `约 ${formatDuration(value)}`; },
+  async pollTask() {
+    if (!this.task?.taskId) return;
+    try {
+      const task = await apiClient.get(`/api/generate/tasks/${this.task.taskId}`);
+      this.task = task;
+      if (task.status === "succeeded") {
+        this.result = { filename: task.filename, duration: task.duration, timestamp: task.timestamp };
+        this.submitting = false; this.stopElapsed(); this.stopPolling();
+      } else if (task.status === "failed") {
+        this.error = task.error || "图片生成失败";
+        this.submitting = false; this.stopElapsed(); this.stopPolling();
+      }
+    } catch (error) {
+      this.error = error.message === "任务不存在或服务已重启" ? "服务已重启，任务未完成，请重新提交。" : error.message;
+      this.submitting = false; this.stopElapsed(); this.stopPolling();
+    }
+  },
   async submit() {
-    this.error = ""; this.result = null; this.submitting = true; this.startElapsed();
+    this.error = ""; this.result = null; this.task = null; this.stopPolling(); this.submitting = true; this.startElapsed();
     try {
       const body = new FormData(this.$refs.form);
       if (!this.$refs.image.files.length) { body.delete("image"); body.delete("imageStrength"); }
       if (!body.get("guidance")) body.delete("guidance"); if (!body.get("seed")) body.delete("seed");
-      const result = await apiClient.request("/api/generate", { method: "POST", body });
-      this.result = result;
-    } catch (error) { this.error = error.message; } finally { this.submitting = false; this.stopElapsed(); }
+      this.task = await apiClient.request("/api/generate", { method: "POST", body });
+      await this.pollTask();
+      if (this.submitting) this.pollTimer = window.setInterval(() => this.pollTask(), 1000);
+    } catch (error) { this.error = error.message; this.submitting = false; this.stopElapsed(); }
   },
 }));
 
@@ -119,6 +140,25 @@ Alpine.data("galleryPage", () => ({
   async remove(timestamp) { if (!confirm("确定要删除这张图片吗？此操作无法撤销。")) return; try { await apiClient.delete(`/api/history/${timestamp}`); this.images = this.images.filter((image) => image.timestamp !== timestamp); } catch (error) { this.error = error.message; } },
   async copy(prompt) { try { await navigator.clipboard.writeText(prompt); } catch (_error) { const area = document.createElement("textarea"); area.value = prompt; document.body.append(area); area.select(); document.execCommand("copy"); area.remove(); } },
   formatDuration, formatTimestamp,
+}));
+
+Alpine.data("queuePage", () => ({
+  tasks: [], queueLength: 0, runningTaskId: null, error: "", timer: null,
+  async init() { await this.load(); },
+  destroy() { if (this.timer) window.clearInterval(this.timer); },
+  async load() {
+    try {
+      const data = await apiClient.get("/api/generate/tasks");
+      this.tasks = data.tasks; this.queueLength = data.queueLength; this.runningTaskId = data.runningTaskId; this.error = "";
+      const shouldPoll = this.tasks.some((task) => ["pending", "running"].includes(task.status));
+      if (shouldPoll && !this.timer) this.timer = window.setInterval(() => this.load(), 1000);
+      if (!shouldPoll && this.timer) { window.clearInterval(this.timer); this.timer = null; }
+    } catch (error) { this.error = error.message; }
+  },
+  statusLabel(status) { return ({ pending: "排队中", running: "生成中", succeeded: "已完成", failed: "失败" })[status] || status; },
+  statusClass(status) { return ({ pending: "badge-warning", running: "badge-info", succeeded: "badge-success", failed: "badge-error" })[status] || "badge-ghost"; },
+  etaLabel(value) { return value === null || value === undefined ? "等待中" : value <= 0 ? "即将开始" : `约 ${formatDuration(value)}`; },
+  formatDateTime, formatDuration,
 }));
 
 window.apiClient = apiClient;

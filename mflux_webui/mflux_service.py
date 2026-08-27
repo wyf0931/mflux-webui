@@ -2,7 +2,7 @@
 
 import time
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 from .model_registry import get_model_spec
@@ -72,19 +72,23 @@ class MfluxService:
             return Flux2Klein(model_config=ModelConfig.flux2_klein_9b(), model_path=self.model_id)
         raise ValueError("暂不支持该模型")
 
+    def load_model(self):
+        """加载模型，供进程级模型缓存管理器调用。"""
+        return self._load_model()
+
     def generate(self, prompt, width, height, seed=None, steps=None, guidance=None,
-                 input_image=None, image_strength=None):
+                 input_image=None, image_strength=None, model=None):
         image_strength = image_strength if input_image and image_strength not in (None, "") else None
         validated = self.validate_params(width, height, image_strength)
         steps = int(steps if steps not in (None, "") else self.spec.steps)
         guidance = float(guidance if guidance not in (None, "") else (self.spec.guidance if self.spec.guidance is not None else DEFAULTS["guidance"]))
         seed = int(seed if seed not in (None, "") else time.time_ns() % 1_000_000_000)
 
-        filename = f"{datetime.now().strftime('%Y-%m-%d-%H-%M-%S-%f')}.png"
+        filename = f"{datetime.now(UTC).astimezone().strftime('%Y-%m-%d-%H-%M-%S-%f')}.png"
         output_path = self.images_dir / filename
         started_at = time.monotonic()
         try:
-            model = self._load_model()
+            model = model or self.load_model()
             image = model.generate_image(
                 seed=seed,
                 prompt=prompt,

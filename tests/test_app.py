@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import mflux_webui.api as api_module
 from mflux_webui import create_app
-from mflux_webui.mflux_service import MODEL_ID, GenerationResult
+from mflux_webui.mflux_service import MODEL_ID
 
 
 class ApiTest(unittest.TestCase):
@@ -21,32 +21,29 @@ class ApiTest(unittest.TestCase):
     def tearDown(self):
         self.temp_dir.cleanup()
 
-    def test_image_to_image_upload_uses_standard_response_and_removes_upload(self):
+    def test_image_to_image_upload_creates_async_task(self):
         captured = {}
-        test_case = self
 
-        class Service:
-            def generate(self, **kwargs):
-                captured.update(kwargs)
-                test_case.assertTrue(Path(kwargs["input_image"]).is_file())
-                return GenerationResult(
-                    image_path=str(test_case.images_dir / "result.png"), filename="result.png", duration=1.0,
-                    model=MODEL_ID, width=768, height=1376, prompt=kwargs["prompt"],
-                )
+        class Manager:
+            def submit(self, params, input_path):
+                captured["params"] = params
+                captured["input_path"] = input_path
+                return {"taskId": "task-1", "status": "pending", "position": 1, "ahead": 0, "queueLength": 1, "etaSeconds": 0}
 
-        with patch.object(api_module, "_mflux_service", return_value=Service()), patch.object(api_module, "add_history_entry"):
-            response = self.client.post("/api/generate", data={
-                "prompt": "把衣服变为紫色", "width": "768", "height": "1376", "steps": "12",
-                "seed": "42", "imageStrength": "0.35", "image": (io.BytesIO(b"fake image"), "reference.png"),
-            }, content_type="multipart/form-data")
+        self.app.extensions["generation_task_manager"] = Manager()
+        response = self.client.post("/api/generate", data={
+            "prompt": "把衣服变为紫色", "width": "768", "height": "1376", "steps": "12",
+            "seed": "42", "imageStrength": "0.35", "image": (io.BytesIO(b"fake image"), "reference.png"),
+        }, content_type="multipart/form-data")
 
         payload = response.get_json()
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 202)
         self.assertEqual(payload["code"], 0)
-        self.assertEqual(payload["message"], "生成完成")
-        self.assertEqual(payload["data"]["filename"], "result.png")
-        self.assertEqual(captured["image_strength"], "0.35")
-        self.assertEqual(list((self.images_dir.parent / "uploads").glob("*")), [])
+        self.assertEqual(payload["message"], "任务已加入队列")
+        self.assertEqual(payload["data"]["taskId"], "task-1")
+        self.assertEqual(captured["params"]["image_strength"], 0.35)
+        self.assertTrue(captured["input_path"].is_file())
+        captured["input_path"].unlink()
 
     @patch.object(api_module, "get_cached_models", return_value={"models": [], "error": None})
     def test_model_cache_uses_standard_response(self, _cache):
@@ -94,3 +91,16 @@ class ApiTest(unittest.TestCase):
         response = self.client.get("/models")
         self.assertEqual(response.status_code, 200)
         self.assertIn("正在识别本地模型".encode(), response.data)
+
+    def test_queue_page_and_task_api_are_available(self):
+        class Manager:
+            def get_task(self, task_id):
+                return {"taskId": task_id, "status": "pending"}
+
+            def list_tasks(self):
+                return {"tasks": [], "queueLength": 0, "runningTaskId": None}
+
+        self.app.extensions["generation_task_manager"] = Manager()
+        self.assertEqual(self.client.get("/queue").status_code, 200)
+        self.assertEqual(self.client.get("/api/generate/tasks").get_json()["data"]["queueLength"], 0)
+        self.assertEqual(self.client.get("/api/generate/tasks/task-1").get_json()["data"]["taskId"], "task-1")

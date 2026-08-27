@@ -15,10 +15,11 @@
             <div class="hidden items-center gap-1 md:flex">
                 <a href="/" class="btn btn-ghost btn-sm text-neutral-content hover:bg-white/10 {% if request.endpoint == 'index' %}bg-white/15 hover:bg-white/15{% endif %}">✨ 生图</a>
                 <a href="/gallery" class="btn btn-ghost btn-sm text-neutral-content hover:bg-white/10 {% if request.endpoint == 'gallery' %}bg-white/15 hover:bg-white/15{% endif %}">🎨 画廊</a>
+                <a href="/queue" class="btn btn-ghost btn-sm text-neutral-content hover:bg-white/10 {% if request.endpoint == 'generation_queue' %}bg-white/15 hover:bg-white/15{% endif %}">⏳ 队列</a>
                 <a href="/models" class="btn btn-ghost btn-sm text-neutral-content hover:bg-white/10 {% if request.endpoint == 'models' %}bg-white/15 hover:bg-white/15{% endif %}">📦 模型库</a>
             </div>
             <button @click="toggle" class="btn btn-ghost btn-square btn-sm text-neutral-content hover:bg-white/10" aria-label="切换主题"><span x-text="current === 'dark' ? '☀️' : '🌙'">🌙</span></button>
-            <div class="dropdown dropdown-end md:hidden"><button tabindex="0" class="btn btn-ghost btn-square btn-sm text-neutral-content hover:bg-white/10" aria-label="菜单"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><ul tabindex="0" class="menu dropdown-content z-[1] mt-3 w-44 rounded-box border border-base-300 bg-base-100 p-2 shadow"><li><a href="/">✨ 生图</a></li><li><a href="/gallery">🎨 画廊</a></li><li><a href="/models">📦 模型库</a></li></ul></div>
+            <div class="dropdown dropdown-end md:hidden"><button tabindex="0" class="btn btn-ghost btn-square btn-sm text-neutral-content hover:bg-white/10" aria-label="菜单"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><ul tabindex="0" class="menu dropdown-content z-[1] mt-3 w-44 rounded-box border border-base-300 bg-base-100 p-2 shadow"><li><a href="/">✨ 生图</a></li><li><a href="/gallery">🎨 画廊</a></li><li><a href="/queue">⏳ 队列</a></li><li><a href="/models">📦 模型库</a></li></ul></div>
         </div>
     </div>
     <main class="mx-auto max-w-[1400px] px-4 py-8 md:px-8">{% block content %}{% endblock %}</main>

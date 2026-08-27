@@ -7,12 +7,12 @@ from flask import Blueprint, current_app, jsonify, request
 from werkzeug.utils import secure_filename
 
 from .db import (
-    add_history_entry,
     clean_history,
     delete_history,
     get_all_history,
     get_history_by_timestamp,
 )
+from .generation_tasks import QueueFullError
 from .mflux_service import MODEL_ID, MfluxService
 from .model_cache import get_cached_models
 from .model_downloader import download_manager
@@ -35,8 +35,8 @@ def _images_dir():
     return Path(current_app.config["IMAGES_DIR"])
 
 
-def _mflux_service(model_id):
-    return MfluxService(_images_dir(), model_id=model_id)
+def _task_manager():
+    return current_app.extensions["generation_task_manager"]
 
 
 @api.get("/models/cache")
@@ -105,18 +105,24 @@ def generate_image():
             input_path = uploads_dir / f"{uuid4().hex}{suffix}"
             input_image.save(input_path)
 
-        result = _mflux_service(model_id).generate(
-            prompt=prompt, width=data.get("width", 768), height=data.get("height", 1024),
-            seed=data.get("seed"), steps=data.get("steps"), guidance=data.get("guidance"),
-            input_image=input_path, image_strength=data.get("imageStrength"),
+        validated = MfluxService.validate_params(
+            data.get("width", 768), data.get("height", 1024),
+            data.get("imageStrength") if input_path else None,
         )
-        timestamp = result.filename.removesuffix(".png")
-        add_history_entry({
-            "timestamp": timestamp, "model": result.model, "width": result.width,
-            "height": result.height, "prompt": result.prompt, "image_path": result.image_path,
-            "duration": result.duration, "metadata": result.metadata,
-        })
-        return success({"filename": result.filename, "duration": result.duration, "timestamp": timestamp}, message="生成完成")
+        task = _task_manager().submit({
+            "model_id": model_id,
+            "prompt": prompt,
+            "width": validated["width"],
+            "height": validated["height"],
+            "seed": data.get("seed"),
+            "steps": data.get("steps"),
+            "guidance": data.get("guidance"),
+            "image_strength": validated["image_strength"],
+        }, input_path=input_path)
+        input_path = None
+        return success(task, message="任务已加入队列", status=202)
+    except QueueFullError as exc:
+        return failure(str(exc), code=2305, status=429)
     except ValueError as exc:
         return failure(str(exc), code=2304)
     except Exception as exc:
@@ -125,6 +131,19 @@ def generate_image():
     finally:
         if input_path and input_path.exists():
             input_path.unlink()
+
+
+@api.get("/generate/tasks")
+def generation_tasks():
+    return success(_task_manager().list_tasks())
+
+
+@api.get("/generate/tasks/<task_id>")
+def generation_task(task_id):
+    task = _task_manager().get_task(task_id)
+    if not task:
+        return failure("任务不存在或服务已重启", code=2405, status=404)
+    return success(task)
 
 
 @api.get("/history")
