@@ -1,16 +1,18 @@
 # mflux WebUI 中文文档
 
-[English README](README.md)
+[项目首页](README.md)
 
 一个基于 Flask 的本地图像生成 WebUI，使用 mflux 运行图像模型，支持文生图、图生图、模型缓存管理和生成画廊。
 
 ## 功能
 
-- 支持 Krea 2 Turbo、Z-Image Turbo 和 FLUX.2 Klein 模型系列。
-- 使用 Alpine.js 与 DaisyUI，提供轻量、响应式界面。
+- 支持 Qwen Image 2.1 Turbo、Krea 2 Turbo、Z-Image Turbo 和 FLUX.2 Klein 模型系列。
+- 使用 Alpine.js、Tailwind CSS 4 与 daisyUI 5，提供轻量、响应式界面。
 - 已安装模型置于页面上方，推荐模型按 Hugging Face / ModelScope 渠道切换。
 - 使用 Hugging Face 与 ModelScope SDK 的默认缓存目录下载模型。
-- 支持深色模式、移动端布局、参考图生图和历史画廊。
+- 提供 Rausch 浅色主题及深色扩展，使用苹方、微软雅黑等系统中文字体，支持移动端布局。
+- 参考图支持本地选择和 ⌘V / Ctrl+V 粘贴，自动预览，可替换或移除；点击生成时上传。
+- 高级选项随模型调整：Qwen Image 2.1 Turbo 默认 8 步、引导系数固定为 1.0，支持随机种子和参考图保留强度。
 
 ## 界面截图
 
@@ -18,14 +20,28 @@
 | --- | --- | --- |
 | ![生图页面](docs/images/generate.png) | ![画廊页面](docs/images/gallery.png) | ![模型库页面](docs/images/models.png) |
 
+队列与失败日志示例：
+
+| 生成队列 | 完整日志弹窗 |
+| --- | --- |
+| ![生成队列](docs/images/queue.png) | ![完整日志弹窗](docs/images/task-logs.png) |
+
+截图使用示例任务，不包含用户的生成历史。
+
 ## 环境要求
 
 - macOS Apple Silicon
 - Python 3.11 或更高版本
 - [uv](https://docs.astral.sh/uv/)
-- Node.js 与 npm
+- Node.js 20 或更新版本与 npm
 
 首次生成或下载模型可能需要数 GB 磁盘空间，请根据模型大小准备足够的存储和内存。
+
+Qwen Image 2.1 Turbo 需要上游 PR [#859](https://github.com/mflux-community/mflux/pull/859)
+中的加载与采样修复。项目通过 `tool.uv.sources` 固定对应提交，因为 PyPI 的
+mflux 0.22.0 尚未包含这些改动。固定提交为 `602b26d242eb7ea9df2a765162a7f35c45c7a143`，
+使用 `uv sync` 安装即可，不需要单独安装全局 mflux。Q4 仓库自带全部模型组件，
+无需另行下载 VAE 或文本编码器。默认使用 8 步、引导系数 1.0，建议使用 1024×1024 或更大尺寸。
 
 ## 安装
 
@@ -90,11 +106,22 @@ cp .env.example .env
 
 ### 文生图
 
-选择已安装模型，输入提示词，选择画面比例后生成。高级选项支持推理步数、引导系数和随机种子。
+选择已安装模型，输入提示词，选择画面比例后生成。切换模型时自动恢复对应的默认步数和引导设置。高级选项按模型能力显示：
+
+- Qwen Image 2.1 Turbo 默认 8 步，引导系数固定为 1.0，使用专用采样曲线。
+- Z-Image Turbo 不使用引导系数；FLUX.2 Klein 使用当前流程的默认引导设置。
+- 随机种子留空时自动生成，也可以填写 `0` 到 `4294967295` 的整数，`0` 是有效种子。
+- 步数接受 `1` 到 `100` 的整数；非法参数在任务入队前返回错误。
 
 ### 图生图
 
-上传 PNG、JPG、JPEG 或 WebP 参考图，将参考图强度设置为 `0` 到 `1`。参考图只作为临时文件使用，生成结束后自动删除。
+选择 PNG、JPG、JPEG 或 WebP 图片，或在生图页面直接按 ⌘V / Ctrl+V 粘贴截图。
+参考图会自动预览并展开高级选项，可替换或移除；点击生成时随请求上传，不会在粘贴后立即执行推理。
+
+支持的浏览器也会提供“从剪贴板粘贴”按钮。如果浏览器拒绝剪贴板读取权限，可以直接使用键盘粘贴；普通提示词文本粘贴不受影响。
+
+当前使用保留构图的图生图模式，参考图保留强度默认 `0.35`，范围为 `0` 到 `1`；值越高，保留原图越多、变化越少。
+参考图只作为临时文件使用，生成结束或任务失败后自动删除。
 
 ### 模型库
 
@@ -102,16 +129,28 @@ cp .env.example .env
 
 ### 生图反馈与队列
 
-提交生成后，服务会立即返回任务 ID，并由单个 GPU worker 按提交顺序执行。生图页会显示排队位置、前方任务数和 ETA；生成中显示已耗时。可在“队列”页面查看最近任务、参数、结果与失败原因。
+提交生成后，服务会立即返回任务 ID，并由单个 GPU worker 按提交顺序执行。生图页会显示排队位置、前方任务数和 ETA；生成中显示已耗时。队列页面展示提交时间、状态、提示词、模型与参数、耗时和结果。模型名称与生图下拉框一致，仓库 ID 可通过模型名的提示查看。
+
+成功任务使用“查看图片”文字按钮；失败任务使用同样样式的“查看日志”文字按钮。点击后通过 daisyUI 原生对话框显示完整日志，可滚动查看，使用关闭按钮、弹窗外区域或 Esc 关闭。
+
+更新后产生的失败任务会保存任务级堆栈；历史记录如果没有保存堆栈，会显示当时记录的完整错误信息。
+日志只在打开弹窗时读取，列表不会反复传输完整堆栈。
 
 模型在首次生成时加载并复用；默认连续 5 分钟没有新任务后自动卸载。服务重启不会恢复此前未完成的任务。
+
+## 前端主题与组件
+
+页面统一使用 daisyUI 5 的按钮、表单控件、卡片、标签、导航、菜单、表格和对话框，Tailwind 负责布局，Alpine.js 负责交互。
+默认白色画布、Rausch 红色主操作和独立柔灰导航；保留明暗切换，不加载外部字体。主题选择保存在 `mflux.theme`。
+
+主题配置及组件约定见 [docs/theme.md](docs/theme.md)，Qwen 模型接入与排查见 [docs/qwen-image-21-turbo.md](docs/qwen-image-21-turbo.md)。
 
 ## 数据位置
 
 | 内容 | 位置 |
 | --- | --- |
 | 生成图片 | `data/images/` |
-| 生成历史 | `data/db.json` |
+| 生成历史、队列记录及任务日志 | `data/db.json` |
 | 临时参考图 | `data/uploads/` |
 | 应用日志 | `logs/app.log` |
 | 模型权重 | SDK 默认缓存目录 |
@@ -120,6 +159,7 @@ cp .env.example .env
 
 ```bash
 uv run python -m unittest discover -s tests
+node --test tests/js/*.test.cjs
 uv lock --check
 uv run --with ruff ruff check app.py mflux_webui tests
 npm run build

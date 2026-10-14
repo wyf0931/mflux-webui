@@ -2,19 +2,19 @@
 {% block title %}画廊 - mflux WebUI{% endblock %}
 {% block content %}
 <section x-data="galleryPage" class="mx-auto max-w-[1400px]">
-  <div class="mb-8 flex flex-wrap items-center gap-3"><span class="text-sm text-base-content/60">按模型筛选：</span><template x-for="model in models" :key="model"><button @click="selected = model" class="btn btn-sm cursor-pointer" :class="selected === model ? 'btn-primary' : 'btn-ghost'" x-text="label(model)"></button></template></div>
-  <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+  <header class="mb-8"><h1 class="text-[28px] font-semibold">画廊</h1><p class="mt-2 text-sm text-base-content/60">查看、筛选与复用生成的图像。</p></header><div class="mb-8 flex flex-wrap items-center gap-3"><span class="text-sm text-base-content/60">按模型筛选：</span><template x-for="model in models" :key="model"><button @click="selected = model" class="btn btn-sm btn-ghost gallery-filter cursor-pointer" :aria-pressed="selected === model" x-text="label(model)"></button></template></div>
+  <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
     <template x-for="image in filteredImages" :key="image.timestamp">
-      <article class="card overflow-hidden border border-base-300 bg-base-100 shadow-sm">
+      <article class="card gallery-card overflow-hidden border border-base-300 bg-base-100 shadow-sm">
         <div class="group relative bg-base-200">
           <a :href="`/static/images/${image.timestamp}.png`" target="_blank"><img :src="`/static/images/${image.timestamp}.png`" :alt="image.prompt" loading="lazy" class="block h-auto w-full"></a>
-          <div class="absolute right-3 bottom-3 flex gap-2 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
+          <div class="absolute right-3 bottom-3 flex gap-2 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
             <button @click.stop="reuse(image)" class="btn btn-square btn-sm border-0 bg-neutral/80 text-neutral-content hover:bg-neutral" aria-label="使用此参数重新生成" title="使用此参数重新生成"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11a8 8 0 1 0 2 5"/><path d="M20 4v7h-7"/></svg></button>
             <button @click.stop="copy(image.prompt)" class="btn btn-square btn-sm border-0 bg-neutral/80 text-neutral-content hover:bg-neutral" aria-label="复制完整提示词"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
             <button @click="remove(image.timestamp)" class="btn btn-error btn-square btn-sm text-error-content" aria-label="删除图片"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14M10 10v6m4-6v6"/></svg></button>
           </div>
         </div>
-        <div class="card-body gap-3 p-5"><p class="overflow-hidden whitespace-pre-wrap text-sm" style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2" x-text="image.prompt"></p><div class="flex items-center gap-2 text-xs text-base-content/60"><span x-text="`${image.width}×${image.height}`"></span><span aria-hidden="true">·</span><span x-text="formatDuration(image.duration)"></span></div><p class="text-xs text-base-content/50" x-text="formatTimestamp(image.timestamp)"></p></div>
+        <div class="card-body gap-3 p-4"><p class="line-clamp-2 whitespace-pre-wrap text-sm" x-text="image.prompt"></p><div class="flex items-center gap-2 text-xs text-base-content/60"><span x-text="`${image.width}×${image.height}`"></span><span aria-hidden="true">·</span><span x-text="formatDuration(image.duration)"></span></div><p class="text-xs text-base-content/50" x-text="formatTimestamp(image.timestamp)"></p></div>
       </article>
     </template>
     <div x-show="!filteredImages.length" x-cloak class="alert col-span-full flex-col py-16 text-center"><div class="text-5xl">🎨</div><h2 class="text-2xl font-semibold">暂无图像</h2><a href="/" class="btn btn-primary btn-sm">开始生成</a></div>

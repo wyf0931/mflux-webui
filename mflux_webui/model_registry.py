@@ -28,6 +28,14 @@ class ModelSpec:
     scheduler: str | None
     supports_image_to_image: bool = True
 
+    @property
+    def guidance_mode(self):
+        if self.backend == "zimage":
+            return "ignored"
+        if self.backend == "qwen21" or self.backend.startswith("flux2-"):
+            return "fixed"
+        return "editable"
+
 
 def _load_model_config():
     try:
@@ -87,6 +95,10 @@ def get_model_spec(repo_id, source=None):
         fallback = ("FLUX.2 Klein 4B", "flux2-4b", 4, 1.0, "flow_match_euler_discrete")
     elif any(token in normalized for token in ("flux2-klein-9b", "flux-2-klein-9b", "flux.2-klein-9b")):
         fallback = ("FLUX.2 Klein 9B", "flux2-9b", 4, 1.0, "flow_match_euler_discrete")
+    elif any(token in normalized for token in (
+        "qwen-image-2-1-turbo", "qwen-image-21-turbo", "qwen-2.1-turbo", "qwen-image-turbo-21",
+    )):
+        fallback = ("Qwen Image 2.1 Turbo", "qwen21", 8, 1.0, "linear")
     if not fallback:
         return None
     family, backend, steps, guidance, scheduler = fallback
@@ -111,6 +123,8 @@ def catalog_models(installed_ids=(), sources=None):
             "key": spec.key, "source": spec.source, "repoId": spec.repo_id,
             "repoUrl": _repo_url(spec.source, spec.repo_id), "name": spec.name,
             "family": spec.family, "sizeGB": spec.size_gb, "steps": spec.steps,
+            "guidance": spec.guidance, "guidanceMode": spec.guidance_mode,
+            "scheduler": spec.scheduler,
             "installed": is_installed, "supportsImageToImage": spec.supports_image_to_image,
         })
     return models

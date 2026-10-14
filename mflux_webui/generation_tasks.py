@@ -6,6 +6,7 @@ import os
 import queue
 import threading
 import time
+import traceback
 from datetime import datetime
 from pathlib import Path
 from uuid import uuid4
@@ -20,6 +21,7 @@ from .db import (
     update_generation_task,
 )
 from .mflux_service import MfluxService
+from .model_registry import get_model_spec
 
 DEFAULT_MODEL_IDLE_TTL_SECONDS = 300
 DEFAULT_QUEUE_MAX_SIZE = 10
@@ -116,6 +118,7 @@ class GenerationTaskManager:
                 "started_at": None,
                 "finished_at": None,
                 "error": None,
+                "logs": None,
                 "filename": None,
                 "timestamp": None,
                 "duration": None,
@@ -137,7 +140,7 @@ class GenerationTaskManager:
 
     def get_task(self, task_id):
         task = get_generation_task(task_id)
-        return self._serialize_task(task) if task else None
+        return self._serialize_task(task, include_logs=True) if task else None
 
     def list_tasks(self):
         tasks = [self._serialize_task(task) for task in get_generation_tasks()]
@@ -164,7 +167,8 @@ class GenerationTaskManager:
             return None
         return round(sum(durations) / len(durations) * ahead)
 
-    def _serialize_task(self, task):
+    def _serialize_task(self, task, include_logs=False):
+        spec = get_model_spec(task["params"]["model_id"])
         result = {
             "taskId": task["task_id"],
             "status": task["status"],
@@ -173,6 +177,7 @@ class GenerationTaskManager:
             "finishedAt": task.get("finished_at"),
             "prompt": task["params"]["prompt"],
             "modelId": task["params"]["model_id"],
+            "modelName": spec.name if spec else task["params"]["model_id"],
             "width": task["params"]["width"],
             "height": task["params"]["height"],
             "steps": task["params"].get("steps"),
@@ -182,6 +187,8 @@ class GenerationTaskManager:
             "metadata": task.get("metadata"),
             "error": task.get("error"),
         }
+        if include_logs:
+            result["logs"] = task.get("logs") or task.get("error")
         if task["status"] == "pending":
             pending = self._pending_tasks()
             position = next((index + 1 for index, item in enumerate(pending) if item["task_id"] == task["task_id"]), None)
@@ -237,9 +244,13 @@ class GenerationTaskManager:
                 "timestamp": timestamp, "duration": result.duration, "metadata": result.metadata,
             })
         except Exception as exc:
+            task_logs = (
+                f"任务 ID：{task_id}\n模型：{params['model_id']}\n\n{traceback.format_exc()}"
+            )
             self._logger.exception("图片生成任务失败：%s", task_id)
             update_generation_task(task_id, {
                 "status": "failed", "finished_at": self._now(), "error": f"生成失败：{exc}",
+                "logs": task_logs,
             })
         finally:
             if input_path and input_path.exists():

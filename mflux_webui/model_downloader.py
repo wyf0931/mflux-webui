@@ -33,7 +33,7 @@ class ModelDownloadManager:
             raise ValueError(f"当前未启用 {source} 模型渠道")
         spec = get_model_spec(repo_id, source)
         if not spec or not is_mflux_image_model(repo_id):
-            raise ValueError("仅支持 mflux 兼容的 Krea 2、Z-Image 与 FLUX.2 Klein 模型")
+            raise ValueError("仅支持目录中声明的 mflux 图像模型")
         task_key = self._task_key(source, repo_id)
         with self._lock:
             active = self._tasks.get(task_key)

@@ -23,13 +23,13 @@ const formatTimestamp = (value) => value ? value.replace(/^(\d{4})-(\d{2})-(\d{2
 const formatDateTime = (value) => value ? new Date(value).toLocaleString("zh-CN", { hour12: false }) : "—";
 
 Alpine.data("theme", () => ({
-  current: localStorage.getItem("theme") || (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"),
+  current: document.documentElement.dataset.theme === "rausch-dark" ? "rausch-dark" : "rausch",
   init() { document.documentElement.dataset.theme = this.current; },
-  toggle() { this.current = this.current === "dark" ? "light" : "dark"; document.documentElement.dataset.theme = this.current; localStorage.setItem("theme", this.current); },
+  toggle() { this.current = this.current === "rausch-dark" ? "rausch" : "rausch-dark"; document.documentElement.dataset.theme = this.current; try { localStorage.setItem("mflux.theme", this.current); } catch (_error) { /* 存储受限时仍允许切换。 */ } },
 }));
 
 Alpine.data("generationPage", () => ({
-  models: [], result: null, error: "", submitting: false, task: null, pollTimer: null, showAdvanced: false, imageName: "选择参考图", elapsedSeconds: 0, elapsedTimer: null, reuseNotice: "",
+  models: [], result: null, error: "", submitting: false, task: null, pollTimer: null, showAdvanced: false, imageName: "", referenceFile: null, imagePreview: "", imageStatus: "", elapsedSeconds: 0, elapsedTimer: null, reuseNotice: "",
   form: { modelId: "", prompt: "", width: 768, height: 1376, steps: 8, guidance: "", seed: "", imageStrength: 0.35 },
   preset: "portrait-9-16",
   presets: [
@@ -45,7 +45,21 @@ Alpine.data("generationPage", () => ({
   ],
   get selectedModel() { return this.models.find((model) => model.repoId === this.form.modelId); },
   get selectedPreset() { return this.presets.find((preset) => preset.id === this.preset); },
-  async init() { try { this.models = (await apiClient.get("/api/models/catalog")).filter((model) => model.installed); this.form.modelId = this.models[0]?.repoId || ""; this.applyReuseParams(); } catch (error) { this.error = error.message; } },
+  get isQwenTurbo() { return this.selectedModel?.family === "Qwen Image 2.1 Turbo"; },
+  get guidanceEditable() { return this.selectedModel?.guidanceMode === "editable"; },
+  get guidanceHint() {
+    if (this.isQwenTurbo) return "Turbo 无需 CFG，引导系数固定为 1.0。";
+    if (this.selectedModel?.guidanceMode === "ignored") return "该模型不使用引导系数。";
+    if (this.selectedModel?.guidanceMode === "fixed") return "该模型使用默认引导设置 1.0。";
+    return "推荐使用模型默认值 1.0；提高数值可能影响画面质量。";
+  },
+  get canReadClipboard() { return Boolean(navigator.clipboard?.read); },
+  async init() { try { this.models = (await apiClient.get("/api/models/catalog")).filter((model) => model.installed); this.form.modelId = this.models[0]?.repoId || ""; this.changeModel(); this.applyReuseParams(); } catch (error) { this.error = error.message; } },
+  changeModel() {
+    this.form.steps = this.selectedModel?.steps || 8;
+    this.form.guidance = this.selectedModel?.guidanceMode === "fixed" ? this.selectedModel.guidance : "";
+  },
+  destroy() { this.stopElapsed(); this.stopPolling(); if (this.imagePreview) URL.revokeObjectURL(this.imagePreview); },
   applyReuseParams() {
     const stored = localStorage.getItem("mflux.reuseGeneration");
     if (!stored) return;
@@ -53,23 +67,59 @@ Alpine.data("generationPage", () => ({
     try {
       const params = JSON.parse(stored);
       this.form.modelId = params.modelId || this.form.modelId;
+      this.changeModel();
       this.form.prompt = params.prompt || "";
       this.form.width = Number(params.width) || this.form.width;
       this.form.height = Number(params.height) || this.form.height;
       this.form.steps = Number(params.steps) || this.form.steps;
       this.form.guidance = params.guidance ?? "";
+      if (!this.guidanceEditable) this.form.guidance = this.selectedModel?.guidanceMode === "fixed" ? this.selectedModel.guidance : "";
       this.form.seed = params.seed ?? "";
       if (params.imageStrength !== null && params.imageStrength !== undefined) this.form.imageStrength = Number(params.imageStrength);
       this.showAdvanced = Boolean(this.form.guidance || this.form.seed || params.hasReference);
       this.syncPreset();
-      if (params.hasReference) this.reuseNotice = "已恢复参数；出于浏览器安全限制，参考图文件需要重新选择。";
+      if (params.hasReference) this.reuseNotice = "已恢复参数，请重新选择或粘贴参考图。";
     } catch (_error) {
       this.reuseNotice = "历史参数读取失败，请手动填写生成参数。";
     }
   },
   applyPreset() { if (!this.selectedPreset) return; this.form.width = this.selectedPreset.width; this.form.height = this.selectedPreset.height; },
   syncPreset() { const matched = this.presets.find((preset) => preset.width === this.form.width && preset.height === this.form.height); this.preset = matched ? matched.id : "custom"; },
-  chooseImage(event) { const file = event.target.files[0]; this.imageName = file ? file.name : "选择参考图"; },
+  setReferenceImage(file, pasted = false) {
+    if (!file) return;
+    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+      this.error = "参考图仅支持 PNG、JPG、WebP。"; return;
+    }
+    if (this.imagePreview) URL.revokeObjectURL(this.imagePreview);
+    const extension = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" }[file.type];
+    this.referenceFile = pasted ? new File([file], `clipboard-${Date.now()}.${extension}`, { type: file.type }) : file;
+    this.imageName = pasted ? "剪贴板图片" : file.name;
+    this.imagePreview = URL.createObjectURL(this.referenceFile);
+    this.imageStatus = pasted ? "已粘贴参考图，生成时自动上传。" : "已选择参考图，生成时自动上传。";
+    this.showAdvanced = true; this.error = "";
+  },
+  chooseImage(event) { this.setReferenceImage(event.target.files[0]); event.target.value = ""; },
+  pasteImage(event) {
+    if (this.submitting) return;
+    const item = Array.from(event.clipboardData?.items || []).find((item) => item.kind === "file" && item.type.startsWith("image/"));
+    if (!item) return;
+    event.preventDefault(); this.setReferenceImage(item.getAsFile(), true);
+  },
+  async readClipboard() {
+    try {
+      const items = await navigator.clipboard.read();
+      for (const item of items) {
+        const type = item.types.find((type) => ["image/png", "image/jpeg", "image/webp"].includes(type));
+        if (type) { this.setReferenceImage(await item.getType(type), true); return; }
+      }
+      this.error = "剪贴板中没有可用图片，请先复制图片或截图。";
+    } catch (_error) { this.error = "无法读取剪贴板，请直接按 ⌘V 或 Ctrl+V 粘贴图片。"; }
+  },
+  removeReferenceImage() {
+    if (this.imagePreview) URL.revokeObjectURL(this.imagePreview);
+    this.referenceFile = null; this.imagePreview = ""; this.imageName = "";
+    this.imageStatus = "已移除参考图。"; this.$refs.image.value = "";
+  },
   startElapsed() { this.elapsedSeconds = 0; this.elapsedTimer = window.setInterval(() => { this.elapsedSeconds += 1; }, 1000); },
   stopElapsed() { if (this.elapsedTimer) window.clearInterval(this.elapsedTimer); this.elapsedTimer = null; },
   stopPolling() { if (this.pollTimer) window.clearInterval(this.pollTimer); this.pollTimer = null; },
@@ -96,7 +146,9 @@ Alpine.data("generationPage", () => ({
     this.error = ""; this.result = null; this.task = null; this.stopPolling(); this.submitting = true; this.startElapsed();
     try {
       const body = new FormData(this.$refs.form);
-      if (!this.$refs.image.files.length) { body.delete("image"); body.delete("imageStrength"); }
+      if (this.referenceFile) body.set("image", this.referenceFile, this.referenceFile.name);
+      else { body.delete("image"); body.delete("imageStrength"); }
+      if (!this.guidanceEditable) body.delete("guidance");
       if (!body.get("guidance")) body.delete("guidance"); if (!body.get("seed")) body.delete("seed");
       this.task = await apiClient.request("/api/generate", { method: "POST", body });
       await this.pollTask();
@@ -127,7 +179,14 @@ Alpine.data("galleryPage", () => ({
   async init() { try { this.images = await apiClient.get("/api/history"); } catch (error) { this.error = error.message; } },
   get models() { return ["all", ...new Set(this.images.map((image) => image.model))]; },
   get filteredImages() { return this.selected === "all" ? this.images : this.images.filter((image) => image.model === this.selected); },
-  label(model) { return model === "all" ? "全部" : model === "mflux-community/krea-2-turbo-mflux-q4" ? "Krea 2 Turbo" : model; },
+  label(model) {
+    const names = {
+      all: "全部",
+      "mflux-community/krea-2-turbo-mflux-q4": "Krea 2 Turbo",
+      "mflux-community/qwen-image-2-1-turbo-mflux-q4": "Qwen Image 2.1 Turbo",
+    };
+    return names[model] || model;
+  },
   reuse(image) {
     const metadata = image.metadata || {};
     localStorage.setItem("mflux.reuseGeneration", JSON.stringify({
@@ -143,7 +202,7 @@ Alpine.data("galleryPage", () => ({
 }));
 
 Alpine.data("queuePage", () => ({
-  tasks: [], queueLength: 0, runningTaskId: null, error: "", timer: null,
+  tasks: [], queueLength: 0, runningTaskId: null, error: "", timer: null, logTask: null, logText: "",
   async init() { await this.load(); },
   destroy() { if (this.timer) window.clearInterval(this.timer); },
   async load() {
@@ -154,6 +213,17 @@ Alpine.data("queuePage", () => ({
       if (shouldPoll && !this.timer) this.timer = window.setInterval(() => this.load(), 1000);
       if (!shouldPoll && this.timer) { window.clearInterval(this.timer); this.timer = null; }
     } catch (error) { this.error = error.message; }
+  },
+  async openLogs(task) {
+    this.logTask = task;
+    this.logText = task.error || "暂无可用日志。";
+    this.$refs.logDialog.showModal();
+    try {
+      const detail = await apiClient.get(`/api/generate/tasks/${task.taskId}`);
+      if (this.logTask?.taskId === task.taskId) this.logText = detail.logs || detail.error || "暂无可用日志。";
+    } catch (error) {
+      if (this.logTask?.taskId === task.taskId) this.logText = `${task.error || ""}\n\n读取完整日志失败：${error.message}`;
+    }
   },
   statusLabel(status) { return ({ pending: "排队中", running: "生成中", succeeded: "已完成", failed: "失败" })[status] || status; },
   statusClass(status) { return ({ pending: "badge-warning", running: "badge-info", succeeded: "badge-success", failed: "badge-error" })[status] || "badge-ghost"; },

@@ -51,7 +51,7 @@ logs() {
     lines=${1:-100}
     mkdir -p "$ROOT_DIR/logs"
     touch "$LOG_FILE"
-    echo "正在跟踪 $LOG_FILE（最近 $lines 行，按 Ctrl-C 退出）"
+    echo "正在跟踪 ${LOG_FILE}（最近 $lines 行，按 Ctrl-C 退出）"
     tail -n "$lines" -f "$LOG_FILE"
 }
 

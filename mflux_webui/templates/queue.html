@@ -2,8 +2,37 @@
 {% block title %}生成队列 - mflux WebUI{% endblock %}
 {% block content %}
 <section x-data="queuePage" class="mx-auto max-w-[1400px]">
-  <header class="mb-6 flex flex-wrap items-end justify-between gap-3"><div><h1 class="text-xl font-semibold">生成队列</h1><p class="mt-1 text-sm text-base-content/60">当前等待 <span x-text="queueLength"></span> 个任务；进行中的任务会每秒自动刷新。</p></div><button @click="load" class="btn btn-outline btn-sm">刷新</button></header>
-  <div class="overflow-x-auto rounded-box border border-base-300 bg-base-100 shadow-sm"><table class="table"><thead><tr><th>提交时间</th><th>状态</th><th>提示词</th><th>模型与参数</th><th>队列信息</th><th>结果</th></tr></thead><tbody><template x-for="task in tasks" :key="task.taskId"><tr><td class="whitespace-nowrap text-sm" x-text="formatDateTime(task.createdAt)"></td><td><span class="badge" :class="statusClass(task.status)" x-text="statusLabel(task.status)"></span></td><td class="max-w-xs whitespace-normal text-sm" x-text="task.prompt"></td><td class="whitespace-nowrap text-sm"><p x-text="task.modelId"></p><p class="text-base-content/60" x-text="`${task.width}×${task.height} · ${task.steps || '默认'} 步`"></p></td><td class="whitespace-nowrap text-sm"><template x-if="task.status === 'pending'"><span x-text="`第 ${task.position} 个 · ${etaLabel(task.etaSeconds)}`"></span></template><template x-if="task.status === 'running'"><span>正在使用 GPU</span></template><template x-if="['succeeded', 'failed'].includes(task.status)"><span x-text="task.duration ? formatDuration(task.duration) : '—'"></span></template></td><td class="max-w-xs whitespace-normal text-sm"><a x-show="task.filename" :href="`/static/images/${task.filename}`" target="_blank" class="link link-primary">查看图片</a><span x-show="task.error" class="text-error" x-text="task.error"></span></td></tr></template><tr x-show="!tasks.length"><td colspan="6" class="py-12 text-center text-base-content/60">暂无生成任务</td></tr></tbody></table></div>
+  <header class="mb-6 flex flex-wrap items-end justify-between gap-3"><div><h1 class="text-[28px] font-semibold">生成队列</h1><p class="mt-1 text-sm text-base-content/60">当前等待 <span x-text="queueLength"></span> 个任务；进行中的任务会每秒自动刷新。</p></div><button @click="load" class="btn btn-outline btn-sm">刷新</button></header>
+  <div class="card overflow-hidden border border-base-300 bg-base-100">
+    <div class="overflow-x-auto">
+      <table class="table w-full min-w-[1000px] table-fixed">
+        <colgroup><col class="w-[16%]"><col class="w-[10%]"><col class="w-[27%]"><col class="w-[23%]"><col class="w-[12%]"><col class="w-[12%]"></colgroup>
+        <thead class="bg-base-200"><tr><th>提交时间</th><th>状态</th><th>提示词</th><th>模型与参数</th><th>耗时</th><th>结果</th></tr></thead>
+        <tbody>
+          <template x-for="task in tasks" :key="task.taskId">
+            <tr>
+              <td class="text-sm tabular-nums" x-text="formatDateTime(task.createdAt)"></td>
+              <td><span class="badge" :class="statusClass(task.status)" x-text="statusLabel(task.status)"></span></td>
+              <td class="text-sm"><p class="whitespace-pre-wrap break-words" x-text="task.prompt"></p></td>
+              <td class="text-sm"><p class="break-words font-medium" :title="task.modelId" x-text="task.modelName || task.modelId"></p><p class="mt-1 text-base-content/60" x-text="`${task.width}×${task.height} · ${task.steps || '默认'} 步`"></p></td>
+              <td class="text-sm"><template x-if="task.status === 'pending'"><span x-text="`第 ${task.position} 个 · ${etaLabel(task.etaSeconds)}`"></span></template><template x-if="task.status === 'running'"><span>正在使用 GPU</span></template><template x-if="['succeeded', 'failed'].includes(task.status)"><span x-text="task.duration ? formatDuration(task.duration) : '—'"></span></template></td>
+              <td class="text-sm"><a x-show="task.filename" :href="`/static/images/${task.filename}`" target="_blank" rel="noopener" class="btn btn-link btn-sm px-0 whitespace-nowrap">查看图片</a><button x-show="task.status === 'failed'" type="button" @click="openLogs(task)" class="btn btn-link btn-sm px-0 whitespace-nowrap">查看日志</button></td>
+            </tr>
+          </template>
+          <tr x-show="!tasks.length"><td colspan="6" class="py-12 text-center text-base-content/60">暂无生成任务</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <dialog x-ref="logDialog" @close="logTask = null" class="modal" aria-labelledby="task-log-title">
+    <div class="modal-box w-[calc(100%-2rem)] max-w-3xl border border-base-300 bg-base-100 p-6">
+      <h2 id="task-log-title" class="text-xl font-semibold">生成任务日志</h2>
+      <p class="mt-2 break-all text-sm text-base-content/60" x-text="logTask?.taskId"></p>
+      <pre tabindex="0" aria-label="完整任务日志" class="mt-5 max-h-[60vh] overflow-y-auto whitespace-pre-wrap break-all rounded-field border border-base-300 bg-base-200 p-4 font-mono text-sm leading-relaxed" x-text="logText"></pre>
+      <div class="modal-action"><form method="dialog"><button class="btn">关闭</button></form></div>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button aria-label="关闭日志弹窗">关闭</button></form>
+  </dialog>
   <div x-show="error" x-cloak role="alert" class="alert alert-error fixed right-6 bottom-6 z-50 w-auto max-w-md shadow-lg" x-text="error"></div>
 </section>
 {% endblock %}

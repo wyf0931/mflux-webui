@@ -109,14 +109,17 @@ def generate_image():
             data.get("width", 768), data.get("height", 1024),
             data.get("imageStrength") if input_path else None,
         )
+        options = MfluxService(_images_dir(), model_id=model_id).validate_options(
+            data.get("steps"), data.get("guidance"), data.get("seed"),
+        )
         task = _task_manager().submit({
             "model_id": model_id,
             "prompt": prompt,
             "width": validated["width"],
             "height": validated["height"],
-            "seed": data.get("seed"),
-            "steps": data.get("steps"),
-            "guidance": data.get("guidance"),
+            "seed": options["seed"],
+            "steps": options["steps"],
+            "guidance": options["guidance"],
             "image_strength": validated["image_strength"],
         }, input_path=input_path)
         input_path = None
