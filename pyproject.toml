@@ -7,9 +7,13 @@ requires-python = ">=3.11"
 dependencies = [
     "flask>=3.0.0",
     "huggingface-hub>=0.30.0",
-    "mflux==0.18.1",
+    "mflux==0.22.0",
     "modelscope>=1.27.0",
     "python-dotenv>=1.0.0",
     "socksio>=1.0.0",
     "tinydb>=4.8.2",
 ]
+
+[tool.uv.sources]
+# 正式版 0.22.0 尚未包含 Qwen Image 2.1 Turbo；固定上游已合并的 #859。
+mflux = { git = "https://github.com/mflux-community/mflux.git", rev = "602b26d242eb7ea9df2a765162a7f35c45c7a143" }

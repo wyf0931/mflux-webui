@@ -2,7 +2,7 @@ import io
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import mflux_webui.api as api_module
 from mflux_webui import create_app
@@ -77,6 +77,28 @@ class ApiTest(unittest.TestCase):
         response = self.client.get("/api/not-found")
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.get_json(), {"code": 2404, "data": None, "message": "接口不存在"})
+
+    def test_invalid_turbo_options_are_rejected_before_enqueue_and_upload_is_cleaned(self):
+        manager = Mock()
+        self.app.extensions["generation_task_manager"] = manager
+        response = self.client.post("/api/generate", data={
+            "modelId": "mflux-community/qwen-image-2-1-turbo-mflux-q4",
+            "prompt": "改成水彩画", "guidance": "3.5",
+            "image": (io.BytesIO(b"clipboard bytes"), "clipboard.png"),
+        }, content_type="multipart/form-data")
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("引导系数必须为 1.0", response.get_json()["message"])
+        manager.submit.assert_not_called()
+        self.assertEqual(list((self.images_dir.parent / "uploads").iterdir()), [])
+
+    @patch.object(api_module, "get_cached_models", return_value={"models": [], "error": None})
+    def test_catalog_declares_model_specific_advanced_options(self, _cache):
+        models = self.client.get("/api/models/catalog").get_json()["data"]
+        qwen = next(model for model in models if model["family"] == "Qwen Image 2.1 Turbo")
+        self.assertEqual(qwen["steps"], 8)
+        self.assertEqual(qwen["guidance"], 1.0)
+        self.assertEqual(qwen["guidanceMode"], "fixed")
+        self.assertEqual(next(model for model in models if model["family"] == "Z-Image Turbo")["guidanceMode"], "ignored")
 
     def test_formatters(self):
         self.assertEqual(self.app.jinja_env.filters["timestamp"]("2026-03-30-16-24-59"), "2026-03-30 16:24:59")

@@ -1,28 +1,34 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-theme="light">
+<html lang="zh-CN" data-theme="rausch">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><link rel="icon" href="data:,">
     <title>{% block title %}mflux WebUI{% endblock %}</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script>try { document.documentElement.dataset.theme = localStorage.getItem('mflux.theme') === 'rausch-dark' ? 'rausch-dark' : 'rausch'; } catch (_) { document.documentElement.dataset.theme = 'rausch'; }</script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
 </head>
-<body x-data="theme" class="bg-base-200 text-base-content">
-    <script>document.documentElement.dataset.theme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');</script>
-    <div class="navbar sticky top-0 z-50 border-b border-white/10 bg-neutral px-4 text-neutral-content shadow-sm md:px-8">
-        <div class="navbar-start"><a href="/" class="text-xl font-bold"><span class="gradient-text">mflux WebUI</span></a></div>
-        <div class="navbar-end gap-1">
-            <div class="hidden items-center gap-1 md:flex">
-                <a href="/" class="btn btn-ghost btn-sm text-neutral-content hover:bg-white/10 {% if request.endpoint == 'index' %}bg-white/15 hover:bg-white/15{% endif %}">✨ 生图</a>
-                <a href="/gallery" class="btn btn-ghost btn-sm text-neutral-content hover:bg-white/10 {% if request.endpoint == 'gallery' %}bg-white/15 hover:bg-white/15{% endif %}">🎨 画廊</a>
-                <a href="/queue" class="btn btn-ghost btn-sm text-neutral-content hover:bg-white/10 {% if request.endpoint == 'generation_queue' %}bg-white/15 hover:bg-white/15{% endif %}">⏳ 队列</a>
-                <a href="/models" class="btn btn-ghost btn-sm text-neutral-content hover:bg-white/10 {% if request.endpoint == 'models' %}bg-white/15 hover:bg-white/15{% endif %}">📦 模型库</a>
-            </div>
-            <button @click="toggle" class="btn btn-ghost btn-square btn-sm text-neutral-content hover:bg-white/10" aria-label="切换主题"><span x-text="current === 'dark' ? '☀️' : '🌙'">🌙</span></button>
-            <div class="dropdown dropdown-end md:hidden"><button tabindex="0" class="btn btn-ghost btn-square btn-sm text-neutral-content hover:bg-white/10" aria-label="菜单"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><ul tabindex="0" class="menu dropdown-content z-[1] mt-3 w-44 rounded-box border border-base-300 bg-base-100 p-2 shadow"><li><a href="/">✨ 生图</a></li><li><a href="/gallery">🎨 画廊</a></li><li><a href="/queue">⏳ 队列</a></li><li><a href="/models">📦 模型库</a></li></ul></div>
+<body x-data="theme" class="bg-base-100 text-base-content">
+    <header class="site-header sticky top-0 z-50 border-b border-base-300 bg-base-200">
+      <div class="navbar mx-auto max-w-[1280px] px-4 md:px-8">
+        <div class="navbar-start w-auto flex-1"><a href="/" class="brand" aria-label="mflux WebUI 首页">mflux WebUI</a></div>
+        <nav class="navbar-center tabs tabs-border hidden md:flex" aria-label="主导航">
+          {% for endpoint, path, label in [('index', '/', '生图'), ('gallery', '/gallery', '画廊'), ('generation_queue', '/queue', '队列'), ('models', '/models', '模型库')] %}
+          <a href="{{ path }}" class="tab {% if request.endpoint == endpoint %}tab-active{% endif %}" {% if request.endpoint == endpoint %}aria-current="page"{% endif %}>{{ label }}</a>
+          {% endfor %}
+        </nav>
+        <div class="navbar-end w-auto flex-1 gap-2">
+            <button @click="toggle" class="btn btn-ghost btn-square" :aria-label="current === 'rausch-dark' ? '切换至浅色主题' : '切换至深色主题'" aria-label="切换至深色主题">
+              <svg x-show="current !== 'rausch-dark'" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M20.9 13.3A9 9 0 0 1 10.7 3.1a9 9 0 1 0 10.2 10.2Z"/></svg>
+              <svg x-show="current === 'rausch-dark'" x-cloak width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg>
+            </button>
+            <details class="dropdown dropdown-end md:hidden"><summary class="btn btn-ghost btn-square" aria-label="打开导航菜单"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></summary><ul class="menu dropdown-content z-[1] mt-3 w-44 rounded-box border border-base-300 bg-base-100 p-2 shadow-lg">
+              {% for endpoint, path, label in [('index', '/', '生图'), ('gallery', '/gallery', '画廊'), ('generation_queue', '/queue', '队列'), ('models', '/models', '模型库')] %}
+              <li><a href="{{ path }}" {% if request.endpoint == endpoint %}aria-current="page"{% endif %}>{{ label }}</a></li>
+              {% endfor %}
+            </ul></details>
         </div>
-    </div>
-    <main class="mx-auto max-w-[1400px] px-4 py-8 md:px-8">{% block content %}{% endblock %}</main>
+      </div>
+    </header>
+    <main class="mx-auto max-w-[1280px] px-4 py-8 md:px-8 md:py-12">{% block content %}{% endblock %}</main>
     <script defer src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html>

@@ -1,6 +1,11 @@
 {
   "models": [
     {
+      "key": "qwen-image-21-turbo-q4", "name": "Qwen Image 2.1 Turbo · q4", "family": "Qwen Image 2.1 Turbo", "backend": "qwen21",
+      "sizeGB": 10.0, "steps": 8, "guidance": 1.0, "scheduler": "linear", "supportsImageToImage": true,
+      "huggingface": "mflux-community/qwen-image-2-1-turbo-mflux-q4"
+    },
+    {
       "key": "krea-2-turbo-q4", "name": "Krea 2 Turbo · q4", "family": "Krea 2 Turbo", "backend": "krea2",
       "sizeGB": 14.7, "steps": 8, "guidance": 1.0, "scheduler": "er_sde", "supportsImageToImage": true,
       "huggingface": "mflux-community/krea-2-turbo-mflux-q4", "modelscope": "krea/Krea-2-Turbo"

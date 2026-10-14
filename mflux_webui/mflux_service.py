@@ -1,5 +1,6 @@
-"""mflux 0.18.1 的 Krea 2 Python API 适配层。"""
+"""mflux Python API 适配层。"""
 
+import math
 import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -25,7 +26,7 @@ class GenerationResult:
 
 
 class MfluxService:
-    """通过 mflux 的 Krea 2 Python API 生成图片。"""
+    """按模型目录中的能力声明调用 mflux Python API。"""
 
     def __init__(self, images_dir, model_id=MODEL_ID):
         self.images_dir = Path(images_dir)
@@ -50,16 +51,40 @@ class MfluxService:
                 image_strength = float(image_strength)
             except (TypeError, ValueError) as exc:
                 raise ValueError("参考图强度必须是数字") from exc
-            if not 0 <= image_strength <= 1:
+            if not math.isfinite(image_strength) or not 0 <= image_strength <= 1:
                 raise ValueError("参考图强度必须在 0 到 1 之间")
         return {"width": width, "height": height, "image_strength": image_strength}
 
+    def validate_options(self, steps=None, guidance=None, seed=None):
+        """在任务入队及加载权重前验证高级参数。"""
+        try:
+            step_value = float(steps if steps not in (None, "") else self.spec.steps)
+            seed_value = float(seed) if seed not in (None, "") else None
+            guidance_value = float(guidance if guidance not in (None, "") else (
+                self.spec.guidance if self.spec.guidance is not None else DEFAULTS["guidance"]
+            ))
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise ValueError("步数、引导系数和随机种子必须是有效数字") from exc
+        if not math.isfinite(step_value) or not step_value.is_integer() or not 1 <= step_value <= 100:
+            raise ValueError("步数必须是 1 到 100 之间的整数")
+        if not math.isfinite(guidance_value) or not 0 <= guidance_value <= 20:
+            raise ValueError("引导系数必须在 0 到 20 之间")
+        if self.spec.backend == "qwen21" and guidance_value != 1.0:
+            raise ValueError("Qwen Image 2.1 Turbo 的引导系数必须为 1.0")
+        if seed_value is not None and (
+            not math.isfinite(seed_value) or not seed_value.is_integer() or not 0 <= seed_value <= 4_294_967_295
+        ):
+            raise ValueError("随机种子必须是 0 到 4294967295 之间的整数")
+        return {"steps": int(step_value), "guidance": guidance_value,
+                "seed": int(seed_value) if seed_value is not None else None}
+
     def _load_model(self):
-        """以 mflux 的 Krea 2 配置加载已缓存的量化模型。"""
+        """按模型家族加载已缓存的量化模型。"""
         # 延迟导入 MLX，确保模型目录、缓存 API 和开发测试不需要在导入阶段初始化 Metal。
         from mflux.models.common.config import ModelConfig
         from mflux.models.flux2 import Flux2Klein
         from mflux.models.krea2 import Krea2
+        from mflux.models.qwen21.variants.txt2img.qwen_image_21 import QwenImage21
         from mflux.models.z_image import ZImageTurbo
 
         if self.spec.backend == "krea2":
@@ -70,6 +95,8 @@ class MfluxService:
             return Flux2Klein(model_config=ModelConfig.flux2_klein_4b(), model_path=self.model_id)
         if self.spec.backend == "flux2-9b":
             return Flux2Klein(model_config=ModelConfig.flux2_klein_9b(), model_path=self.model_id)
+        if self.spec.backend == "qwen21":
+            return QwenImage21(model_config=ModelConfig.qwen_image_21_turbo(), model_path=self.model_id)
         raise ValueError("暂不支持该模型")
 
     def load_model(self):
@@ -80,9 +107,9 @@ class MfluxService:
                  input_image=None, image_strength=None, model=None):
         image_strength = image_strength if input_image and image_strength not in (None, "") else None
         validated = self.validate_params(width, height, image_strength)
-        steps = int(steps if steps not in (None, "") else self.spec.steps)
-        guidance = float(guidance if guidance not in (None, "") else (self.spec.guidance if self.spec.guidance is not None else DEFAULTS["guidance"]))
-        seed = int(seed if seed not in (None, "") else time.time_ns() % 1_000_000_000)
+        options = self.validate_options(steps, guidance, seed)
+        steps, guidance = options["steps"], options["guidance"]
+        seed = options["seed"] if options["seed"] is not None else time.time_ns() % 1_000_000_000
 
         filename = f"{datetime.now(UTC).astimezone().strftime('%Y-%m-%d-%H-%M-%S-%f')}.png"
         output_path = self.images_dir / filename

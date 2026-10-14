@@ -1,33 +1,18 @@
 # mflux WebUI
 
-[中文文档](README.zh-CN.md)
+使用 Flask、Alpine.js、Tailwind CSS 4 与 daisyUI 5，在 Apple Silicon Mac 上通过 mflux 本地生成图像。
+支持文生图、参考图生图、模型缓存管理、异步队列和历史画廊。
 
-A local Flask web UI for running mflux image models with text-to-image, image-to-image, model cache management, and a generation gallery.
+- **模型**：Qwen Image 2.1 Turbo、Krea 2 Turbo、Z-Image Turbo、FLUX.2 Klein。
+- **参考图**：本地选择或 ⌘V / Ctrl+V 粘贴，自动预览，可替换、移除，生成时上传。
+- **参数**：随模型切换默认值；Qwen Turbo 默认 8 步、引导系数固定为 1.0。
+- **队列**：查看状态、模型别名、耗时和结果；失败时通过“查看日志”弹窗查看完整错误。
+- **界面**：基于 daisyUI 的 Rausch 浅色主题与深色扩展，支持系统中文字体和手机布局。
+- **渠道**：Hugging Face / ModelScope，沿用各 SDK 的默认模型缓存目录。
 
-## Highlights
+## 快速开始
 
-- Supports Krea 2 Turbo, Z-Image Turbo, and FLUX.2 Klein model families.
-- Uses Alpine.js and DaisyUI for a lightweight responsive interface.
-- Lists installed models separately from curated recommendations.
-- Downloads from Hugging Face and ModelScope using each SDK's default cache directory.
-- Supports dark mode, mobile layouts, reference-image editing, and gallery history.
-
-## Screenshots
-
-| Generate | Gallery | Models |
-| --- | --- | --- |
-| ![Generate page](docs/images/generate.png) | ![Gallery page](docs/images/gallery.png) | ![Models page](docs/images/models.png) |
-
-## Requirements
-
-- macOS on Apple Silicon
-- Python 3.11 or newer
-- [uv](https://docs.astral.sh/uv/)
-- Node.js and npm
-
-The first generation or model download may fetch several gigabytes of weights. Make sure your machine has enough disk space and memory for the selected model.
-
-## Installation
+环境要求：macOS Apple Silicon、Python 3.11 或更新版本、Node.js 20 或更新版本、npm 和 [uv](https://docs.astral.sh/uv/)。
 
 ```bash
 git clone https://github.com/wyf0931/mflux-webui.git
@@ -35,105 +20,61 @@ cd mflux-webui
 uv sync
 npm install
 npm run build
-```
-
-## Run
-
-```bash
 uv run python app.py
 ```
 
-Open <http://127.0.0.1:8090> in your browser.
+打开 <http://127.0.0.1:8090>。
 
-For background operation:
+当前 mflux 固定为 0.22.0 加上上游 PR [#859](https://github.com/mflux-community/mflux/pull/859)
+对应的合并提交，包含 Qwen Image 2.1 Turbo 加载与调度修复。使用 `uv sync` 即可安装正确版本。
+模型首次使用需要下载权重，请预留磁盘空间与统一内存。
+
+## 界面预览
+
+| 生图 | 画廊 | 模型库 |
+| --- | --- | --- |
+| ![生图页面](docs/images/generate.png) | ![画廊页面](docs/images/gallery.png) | ![模型库页面](docs/images/models.png) |
+
+| 生成队列 | 完整日志弹窗 |
+| --- | --- |
+| ![生成队列](docs/images/queue.png) | ![完整日志弹窗](docs/images/task-logs.png) |
+
+截图使用示例任务，不包含用户的生成历史。
+
+## 后台运行
 
 ```bash
 ./ops.sh start
 ./ops.sh status
 ./ops.sh status --watch
-./ops.sh logs
+./ops.sh logs 100
 ./ops.sh restart
 ./ops.sh stop
 ```
 
-Logs are written to `logs/app.log`; the process ID is written to `logs/app.pid`.
-`status --watch` refreshes the process PID and uptime every five seconds. `logs` follows the latest application log without writing monitor output to the log file.
+日志位于 `logs/app.log`，PID 位于 `logs/app.pid`。
+模型目录位于 [`config/models.json`](config/models.json)，环境变量参考 [`.env.example`](.env.example)。
 
-## Model repositories
+## 文档
 
-Curated models are defined in [`config/models.json`](config/models.json), loaded when the application starts. Each entry can provide a Hugging Face ID, a ModelScope ID, or both.
+- [完整使用文档](README.zh-CN.md)：模型渠道、参数、剪贴板、任务队列与数据目录。
+- [主题与组件约定](docs/theme.md)：daisyUI 主题变量、系统字体、组件及交互规范。
+- [Qwen Image 2.1 Turbo 接入与排查](docs/qwen-image-21-turbo.md)：固定依赖、HF 模型与兼容性问题。
+- [项目协作说明](AGENTS.md)：开发命令与代码协作要求。
 
-The `MODEL_REPO` setting controls which recommendation and download channels are enabled:
-
-| Value | Enabled channels |
-| --- | --- |
-| `all` | Hugging Face and ModelScope (default) |
-| `huggingface` | Hugging Face only |
-| `modelscope` | ModelScope only |
-
-Copy `.env.example` to `.env` and change the value if needed:
+## 开发检查
 
 ```bash
-cp .env.example .env
-```
-
-Downloads use the default cache locations managed by `huggingface_hub` and `modelscope`; the application does not move or replace those files.
-
-## Usage
-
-### Text-to-image
-
-Choose an installed model, enter a prompt, select an aspect ratio, and generate an image. Advanced controls include inference steps, guidance, and seed.
-
-### Image-to-image
-
-Upload a PNG, JPG, JPEG, or WebP reference image and choose an image strength from `0` to `1`. Uploaded references are temporary and removed after generation.
-
-### Model library
-
-The model page shows installed models first. The recommendation section provides Hugging Face and ModelScope tabs, repository links, download progress, and cancellation for active downloads.
-
-### Generation feedback
-
-mflux returns a complete image after inference. It does not expose an intermediate image stream through the current Python API, so the generation page shows an elapsed-time indicator while the request is running and displays the image when inference completes.
-
-## Data locations
-
-| Data | Location |
-| --- | --- |
-| Generated images | `data/images/` |
-| Generation history | `data/db.json` |
-| Temporary reference images | `data/uploads/` |
-| Application logs | `logs/app.log` |
-| Model weights | SDK-managed default caches |
-
-## Development
-
-```bash
+npm run build
+node --test tests/js/*.test.cjs
 uv run python -m unittest discover -s tests
 uv lock --check
-uv run --with ruff ruff check app.py mflux_webui tests
-npm run build
 uv run python -m compileall app.py mflux_webui tests
+uv run --with ruff ruff check app.py mflux_webui tests
 ```
 
-The application uses Flask for the page shell and API, Alpine.js for local page state, Tailwind CSS + DaisyUI for styling, and mflux for local inference.
+生产界面继续使用 Tailwind CLI 与 esbuild 构建，无需另启 Vite 开发服务。
 
-## Project structure
+## 许可证
 
-```text
-mflux_webui/       Flask application package, routes, services, and assets
-config/            Curated model configuration
-tests/             Unit tests and mocked inference coverage
-data/              Runtime image and history data
-docs/              Design notes and screenshots
-app.py             Backward-compatible development entry point
-```
-
-## Contributing
-
-Issues and pull requests are welcome. Please describe the user-facing behavior, include reproduction steps for bugs, and run the development checks before submitting a pull request.
-
-## License
-
-This project is distributed under the [ISC License](LICENSE).
+本项目使用 [ISC License](LICENSE)。

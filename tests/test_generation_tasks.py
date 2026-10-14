@@ -105,3 +105,17 @@ class GenerationTaskManagerTest(unittest.TestCase):
 
         self.assertEqual(manager.get_task(broken["taskId"])["status"], "failed")
         self.assertEqual(manager.get_task(successful["taskId"])["status"], "succeeded")
+        logs = manager.get_task(broken["taskId"])["logs"]
+        self.assertIn("Traceback", logs)
+        self.assertIn("推理失败", logs)
+        self.assertIn(broken["taskId"], logs)
+        self.assertTrue(all("logs" not in task for task in manager.list_tasks()["tasks"]))
+
+    def test_task_alias_matches_model_catalog_and_old_errors_remain_available(self):
+        params = self.params("alias")
+        params["model_id"] = "mflux-community/qwen-image-2-1-turbo-mflux-q4"
+        task = self.manager.submit(params)
+        detail = self.manager.get_task(task["taskId"])
+        self.assertEqual(detail["modelName"], "Qwen Image 2.1 Turbo · q4")
+        db_module.update_generation_task(task["taskId"], {"status": "failed", "error": "历史完整错误", "logs": None})
+        self.assertEqual(self.manager.get_task(task["taskId"])["logs"], "历史完整错误")
