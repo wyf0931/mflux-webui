@@ -232,6 +232,29 @@ fn open_external(app: &tauri::AppHandle, url: &tauri::Url) {
     }
 }
 
+fn open_image(app: &tauri::AppHandle, url: &tauri::Url) -> bool {
+    if !is_backend_url(app, url) {
+        return false;
+    }
+    let Some(filename) = url.path().strip_prefix("/static/images/") else {
+        return false;
+    };
+    if filename.contains(['/', '\\']) || !filename.ends_with(".png") {
+        return false;
+    }
+    let image = app
+        .state::<DesktopState>()
+        .data_dir
+        .join("images")
+        .join(filename);
+    if image.is_file() {
+        let _ = app
+            .opener()
+            .open_path(image.to_string_lossy(), None::<&str>);
+    }
+    true
+}
+
 fn main() {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _, _| {
@@ -272,7 +295,11 @@ fn main() {
                     .title("mflux WebUI")
                     .inner_size(1200.0, 820.0)
                     .min_inner_size(760.0, 600.0)
+                    .initialization_script("document.addEventListener('click', event => { const link = event.target.closest?.('a[target=\"_blank\"]'); if (link) { event.preventDefault(); location.assign(link.href); } }, true);")
                     .on_navigation(move |url| {
+                        if open_image(&navigation_app, url) {
+                            return false;
+                        }
                         if url.scheme() == "tauri"
                             || url.host_str() == Some("tauri.localhost")
                             || is_backend_url(&navigation_app, url)
@@ -282,27 +309,8 @@ fn main() {
                         open_external(&navigation_app, url);
                         false
                     })
-                    .on_new_window(move |url, features| {
-                        if is_backend_url(&new_window_app, &url)
-                            && url.path().starts_with("/static/images/")
-                        {
-                            let navigation_app = new_window_app.clone();
-                            let viewer = WebviewWindowBuilder::new(
-                                &new_window_app,
-                                format!("image-{}", uuid::Uuid::new_v4()),
-                                WebviewUrl::External("about:blank".parse().unwrap()),
-                            )
-                            .title("生成图像 · mflux WebUI")
-                            .window_features(features)
-                            .on_navigation(move |url| {
-                                url.as_str() == "about:blank"
-                                    || is_backend_url(&navigation_app, url)
-                            })
-                            .build();
-                            if let Ok(window) = viewer {
-                                return tauri::webview::NewWindowResponse::Create { window };
-                            }
-                        } else {
+                    .on_new_window(move |url, _features| {
+                        if !open_image(&new_window_app, &url) {
                             open_external(&new_window_app, &url);
                         }
                         tauri::webview::NewWindowResponse::Deny
