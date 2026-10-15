@@ -8,6 +8,7 @@ use std::process::{Child, Command, Stdio};
 use std::sync::{mpsc, Mutex};
 use std::time::{Duration, Instant};
 use tauri::{Manager, RunEvent, WebviewUrl, WebviewWindowBuilder};
+use tauri_plugin_dialog::{DialogExt, MessageDialogButtons};
 use tauri_plugin_opener::OpenerExt;
 
 #[derive(Clone, Serialize)]
@@ -82,14 +83,31 @@ fn fail(app: &tauri::AppHandle, attempt: u64, message: String) {
     if backend.attempt != attempt || backend.stopping {
         return;
     }
+    let was_ready = backend.port.is_some();
     stop_child(&mut backend);
     backend.status = LaunchStatus {
         phase: "failed".into(),
-        message,
+        message: message.clone(),
     };
     drop(backend);
-    if let Some(window) = app.get_webview_window("main") {
-        let _ = window.navigate("tauri://localhost/index.html".parse().unwrap());
+    if was_ready {
+        let mut dialog = app
+            .dialog()
+            .message(message)
+            .title("本地服务已停止")
+            .buttons(MessageDialogButtons::OkCancelCustom(
+                "重新启动".into(),
+                "退出".into(),
+            ));
+        if let Some(window) = app.get_webview_window("main") {
+            dialog = dialog.parent(&window);
+        }
+        let restart = dialog.blocking_show();
+        if restart {
+            app.restart();
+        } else {
+            app.exit(0);
+        }
     }
 }
 
@@ -265,6 +283,7 @@ fn main() {
             }
         }))
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .invoke_handler(tauri::generate_handler![
             desktop_status,
             desktop_retry,
