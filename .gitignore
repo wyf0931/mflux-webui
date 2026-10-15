@@ -17,6 +17,8 @@ CLAUDE.md
 .planning/*
 .playwright-cli/
 node_modules/
+src-tauri/target/
+src-tauri/gen/
 
 # Data files
 data/*.json

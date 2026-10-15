@@ -1,5 +1,7 @@
 # mflux WebUI 中文文档
 
+希望安装后直接打开使用，可选择 [macOS 桌面版](docs/desktop.md)。桌面版内置 Python/mflux 运行环境，保留现有功能，模型权重首次使用时下载；安装包与预发布状态见 [GitHub Releases](https://github.com/wyf0931/mflux-webui/releases)。
+
 [项目首页](README.md)
 
 一个基于 Flask 的本地图像生成 WebUI，使用 mflux 运行图像模型，支持文生图、图生图、模型缓存管理和生成画廊。

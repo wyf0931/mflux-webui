@@ -25,7 +25,14 @@ const formatDateTime = (value) => value ? new Date(value).toLocaleString("zh-CN"
 Alpine.data("theme", () => ({
   current: document.documentElement.dataset.theme === "rausch-dark" ? "rausch-dark" : "rausch",
   init() { document.documentElement.dataset.theme = this.current; },
-  toggle() { this.current = this.current === "rausch-dark" ? "rausch" : "rausch-dark"; document.documentElement.dataset.theme = this.current; try { localStorage.setItem("mflux.theme", this.current); } catch (_error) { /* 存储受限时仍允许切换。 */ } },
+  toggle() {
+    this.current = this.current === "rausch-dark" ? "rausch" : "rausch-dark";
+    document.documentElement.dataset.theme = this.current;
+    try { localStorage.setItem("mflux.theme", this.current); } catch (_error) { /* 存储受限时仍允许切换。 */ }
+    if (document.documentElement.dataset.desktop === "true") {
+      apiClient.post("/desktop/theme", { theme: this.current }).catch((error) => console.error("主题保存失败", error));
+    }
+  },
 }));
 
 Alpine.data("generationPage", () => ({

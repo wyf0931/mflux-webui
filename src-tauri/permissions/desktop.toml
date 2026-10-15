@@ -1,0 +1,4 @@
+[[permission]]
+identifier = "allow-desktop-controls"
+description = "允许本地启动页面管理桌面后端。"
+commands.allow = ["desktop_status", "desktop_retry", "desktop_open_logs"]

@@ -1,21 +1,19 @@
 """mflux WebUI Flask 应用工厂与页面路由。"""
 
 from datetime import UTC, datetime
-from pathlib import Path
 
 from flask import Flask, render_template, request, send_from_directory
 
 from .api import api as _api
 from .api import failure
 from .generation_tasks import GenerationTaskManager
-
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+from .paths import DATA_DIR
 
 
 def create_app():
     """创建 Flask 应用实例，便于测试、开发和部署环境复用。"""
     app = Flask(__name__)
-    images_dir = PROJECT_ROOT / "data" / "images"
+    images_dir = DATA_DIR / "images"
     images_dir.mkdir(parents=True, exist_ok=True)
     app.config["IMAGES_DIR"] = str(images_dir)
     app.register_blueprint(_api)
