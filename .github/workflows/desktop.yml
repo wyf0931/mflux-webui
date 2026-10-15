@@ -80,10 +80,11 @@ jobs:
       - name: 整理下载文件与校验值
         run: |
           mkdir -p dist/desktop
-          cp src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg dist/desktop/
+          VERSION="$(node -p 'require("./src-tauri/tauri.conf.json").version')"
+          cp src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg "dist/desktop/mflux-WebUI_${VERSION}_macos-arm64.dmg"
           ditto -c -k --sequesterRsrc --keepParent \
             "src-tauri/target/aarch64-apple-darwin/release/bundle/macos/mflux WebUI.app" \
-            dist/desktop/mflux-WebUI-macos-arm64.app.zip
+            "dist/desktop/mflux-WebUI_${VERSION}_macos-arm64.app.zip"
           cd dist/desktop
           shasum -a 256 *.dmg *.zip > SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
