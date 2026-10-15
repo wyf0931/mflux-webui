@@ -1,5 +1,8 @@
 import unittest
+from pathlib import Path
 from unittest.mock import patch
+
+from huggingface_hub.errors import CacheNotFound
 
 from mflux_webui.model_cache import (
     get_cached_models,
@@ -9,6 +12,11 @@ from mflux_webui.model_cache import (
 
 
 class ModelCacheTest(unittest.TestCase):
+    @patch.dict("os.environ", {"MODEL_REPO": "huggingface"})
+    @patch("mflux_webui.model_cache.scan_cache_dir", side_effect=CacheNotFound("尚未下载模型", Path("/missing-cache")))
+    def test_first_launch_without_cache_returns_empty_models(self, _scan):
+        self.assertEqual(get_cached_models(), {"models": [], "error": None})
+
     def test_recognizes_only_explicit_mflux_image_model_families(self):
         self.assertTrue(is_mflux_image_model("mflux-community/krea-2-turbo-mflux-q4"))
         self.assertTrue(is_mflux_image_model("filipstrand/Z-Image-Turbo-mflux-4bit"))

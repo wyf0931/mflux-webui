@@ -27,9 +27,14 @@ def main():
     assert mlx_alias.is_symlink(), "MLX 库链接必须保留；普通资源复制会破坏 metallib 查找并使安装包变大"
     with tempfile.TemporaryDirectory(prefix="mflux-desktop-test-") as temporary:
         token = secrets.token_hex(32)
+        cache_environment = {} if args.generate_model else {
+            "HF_HOME": str(Path(temporary) / "huggingface"),
+            "HF_HUB_CACHE": str(Path(temporary) / "huggingface/hub"),
+            "MODELSCOPE_CACHE": str(Path(temporary) / "modelscope"),
+        }
         process = subprocess.Popen([str(executable)], cwd=temporary,
                                    stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True,
-                                   env={**os.environ, "HF_HUB_OFFLINE": "1"})
+                                   env={**os.environ, **cache_environment, "HF_HUB_OFFLINE": "1"})
         try:
             process.stdin.write(json.dumps({"token": token, "dataDir": temporary}) + "\n")
             process.stdin.flush()
@@ -48,10 +53,17 @@ def main():
             client = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cookies))
             client.open(f"{origin}/desktop/bootstrap?token={token}", timeout=10).read()
             for route in ("/", "/models", "/gallery", "/queue", "/static/css/app.css", "/static/js/app.js",
-                          "/api/models/catalog", "/api/generate/tasks", "/api/history"):
-                response = client.open(origin + route, timeout=15)
+                          "/api/models/cache", "/api/models/catalog", "/api/generate/tasks", "/api/history"):
+                try:
+                    response = client.open(origin + route, timeout=15)
+                except urllib.error.HTTPError as error:
+                    raise AssertionError(f"{route} 返回 HTTP {error.code}：{error.read().decode()}") from error
                 assert response.status == 200, (route, response.status)
                 assert response.read(), route
+            catalog = json.load(client.open(origin + "/api/models/catalog", timeout=15))["data"]
+            assert catalog, "首次启动必须仍然提供模型下载目录"
+            if not args.generate_model:
+                assert all(not model["installed"] for model in catalog), "空缓存不能报告已安装模型"
             assert (Path(temporary) / "db.json").is_file()
             theme_request = urllib.request.Request(origin + "/desktop/theme",
                 data=b'{"theme":"rausch-dark"}',

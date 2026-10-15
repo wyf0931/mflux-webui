@@ -1,6 +1,6 @@
 [package]
 name = "mflux-webui-desktop"
-version = "0.1.1"
+version = "0.1.2"
 description = "mflux WebUI 的 macOS 桌面应用"
 edition = "2021"
 rust-version = "1.85"
