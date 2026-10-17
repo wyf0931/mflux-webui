@@ -10,6 +10,35 @@ from mflux_webui.mflux_service import MODEL_ID
 
 
 class ApiTest(unittest.TestCase):
+    def test_reference_upload_order_and_validation(self):
+        manager = Mock()
+        manager.submit.return_value = {"taskId": "multi", "status": "pending"}
+        self.app.extensions["generation_task_manager"] = manager
+        fields = {"prompt": "图一参考图二", "modelId": "mflux-community/qwen-image-2-1-turbo-mflux-q4",
+                  "generationMode": "reference", "images": [
+                      (io.BytesIO(b"one"), "图一.png"), (io.BytesIO(b"two"), "衣服.png"),
+                  ]}
+        response = self.client.post("/api/generate", data=fields, content_type="multipart/form-data")
+        self.assertEqual(response.status_code, 202)
+        paths = manager.submit.call_args.kwargs["input_paths"]
+        self.assertEqual([path.read_bytes() for path in paths], [b"one", b"two"])
+        self.assertEqual(manager.submit.call_args.args[0]["generation_mode"], "reference")
+        for path in paths:
+            path.unlink()
+        response = self.client.post("/api/generate", data={
+            "prompt": "图三", "modelId": fields["modelId"], "generationMode": "reference",
+            "images": [(io.BytesIO(b"one"), "one.png")],
+        }, content_type="multipart/form-data")
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("超出已上传", response.get_json()["message"])
+        response = self.client.post("/api/generate", data={
+            "prompt": "图一和图二", "modelId": fields["modelId"], "generationMode": "reference",
+            "images": [(io.BytesIO(b"one"), "one.png"), (io.BytesIO(b"bad"), "two.gif")],
+        }, content_type="multipart/form-data")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(list((self.images_dir.parent / "uploads").iterdir()), [])
+        self.assertEqual(manager.submit.call_count, 1)
+
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.images_dir = Path(self.temp_dir.name) / "images"

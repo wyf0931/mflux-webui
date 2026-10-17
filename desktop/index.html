@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="rausch">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>mflux WebUI</title>
+    <link rel="stylesheet" href="app.css">
+    <script src="startup.js" defer></script>
+  </head>
+  <body>
+    <main class="flex min-h-screen items-center justify-center p-8">
+      <section class="w-full max-w-md" aria-live="polite">
+        <p class="brand mb-8">mflux WebUI</p>
+        <span id="spinner" class="loading loading-spinner loading-md mb-4" aria-hidden="true"></span>
+        <h1 id="title" class="text-2xl font-semibold">正在启动</h1>
+        <p id="message" class="mt-3 text-sm text-base-content/70">正在准备本地图像生成环境，请稍候。</p>
+        <div id="actions" class="mt-6 hidden flex-wrap gap-3">
+          <button id="retry" class="btn btn-primary">重新启动</button>
+          <button id="logs" class="btn btn-ghost">打开日志目录</button>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

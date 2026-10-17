@@ -17,3 +17,8 @@ dependencies = [
 [tool.uv.sources]
 # 正式版 0.22.0 尚未包含 Qwen Image 2.1 Turbo；固定上游已合并的 #859。
 mflux = { git = "https://github.com/mflux-community/mflux.git", rev = "602b26d242eb7ea9df2a765162a7f35c45c7a143" }
+
+[dependency-groups]
+desktop = [
+    "pyinstaller>=6.22,<7",
+]

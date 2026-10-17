@@ -4,8 +4,9 @@ from pathlib import Path
 
 from tinydb import Query, TinyDB
 
+from .paths import DATA_DIR
+
 # Database directory
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 # TinyDB database file

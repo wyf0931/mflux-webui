@@ -11,7 +11,10 @@
     "build:css": "tailwindcss -i ./mflux_webui/static/css/input.css -o ./mflux_webui/static/css/app.css --minify",
     "watch:css": "tailwindcss -i ./mflux_webui/static/css/input.css -o ./mflux_webui/static/css/app.css --watch",
     "build:js": "esbuild mflux_webui/static/js/main.js --bundle --minify --outfile=mflux_webui/static/js/app.js",
-    "build": "npm run build:css && npm run build:js"
+    "build": "npm run build:css && npm run build:js",
+    "desktop:prepare": "npm run build && uv run --locked --group desktop python scripts/build_desktop_backend.py",
+    "desktop:dev": "tauri dev",
+    "desktop:build": "tauri build"
   },
   "repository": {
     "type": "git",
@@ -27,6 +30,8 @@
   "homepage": "https://github.com/wyf0931/mflux-webui#readme",
   "devDependencies": {
     "@tailwindcss/cli": "^4.3.3",
+    "@tauri-apps/api": "^2.12.3",
+    "@tauri-apps/cli": "^2.12.2",
     "daisyui": "^5.7.17",
     "esbuild": "^0.28.2",
     "tailwindcss": "^4.3.3"

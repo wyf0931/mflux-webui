@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 
 from huggingface_hub import HfApi, scan_cache_dir
+from huggingface_hub.errors import CacheNotFound
 
 from .model_registry import configured_sources
 
@@ -88,6 +89,8 @@ def _get_modelscope_models():
 def _get_huggingface_models(include_hub_metadata=True):
     try:
         cache_info = scan_cache_dir()
+    except CacheNotFound:
+        return [], None
     except Exception as exc:
         return [], f"无法读取 Hugging Face 缓存：{exc}"
     models = []

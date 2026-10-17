@@ -16,13 +16,14 @@ class MfluxServiceTest(unittest.TestCase):
 
     def test_loader_selects_turbo_config_and_preserves_existing_backends(self):
         config = MagicMock()
-        krea, zimage, flux2, qwen = (MagicMock() for _ in range(4))
+        krea, zimage, flux2, qwen, edit = (MagicMock() for _ in range(5))
         modules = {
             "mflux.models.common.config": MagicMock(ModelConfig=config),
             "mflux.models.krea2": MagicMock(Krea2=krea),
             "mflux.models.z_image": MagicMock(ZImageTurbo=zimage),
             "mflux.models.flux2": MagicMock(Flux2Klein=flux2),
             "mflux.models.qwen21.variants.txt2img.qwen_image_21": MagicMock(QwenImage21=qwen),
+            "mflux.models.qwen21.variants.edit.qwen_image_21_edit": MagicMock(QwenImage21Edit=edit),
         }
         cases = [
             ("mflux-community/qwen-image-2-1-turbo-mflux-q4", qwen, "qwen_image_21_turbo"),
@@ -31,7 +32,9 @@ class MfluxServiceTest(unittest.TestCase):
             ("Runpod/FLUX.2-klein-4B-mflux-4bit", flux2, "flux2_klein_4b"),
             ("mflux-community/flux2-klein-9b-mflux-q4", flux2, "flux2_klein_9b"),
         ]
-        with patch.dict("sys.modules", modules):
+        with patch.dict("sys.modules", modules), patch(
+            "mflux_webui.mflux_service.resolve_krea_checkpoint", side_effect=lambda repo: repo,
+        ):
             for repo_id, constructor, config_method in cases:
                 with self.subTest(repo_id=repo_id):
                     service = MfluxService(self.temp_dir.name, repo_id)
@@ -40,6 +43,9 @@ class MfluxServiceTest(unittest.TestCase):
                     if config_method:
                         kwargs["model_config"] = getattr(config, config_method).return_value
                     constructor.assert_called_with(**kwargs)
+            reference = MfluxService(self.temp_dir.name, cases[0][0], "reference")
+            self.assertIs(reference.load_model(), edit.return_value)
+            edit.assert_called_once_with(model_path=cases[0][0], model_config=config.qwen_image_21_turbo.return_value)
         config.qwen_image_21.assert_not_called()
 
     @patch.object(MfluxService, "_load_model")
@@ -68,6 +74,34 @@ class MfluxServiceTest(unittest.TestCase):
                        {"seed": 4_294_967_296}):
             with self.subTest(params=params), self.assertRaises(ValueError):
                 self.service.validate_options(**params)
+
+    def test_reference_editing_translates_ordered_image_references(self):
+        service = MfluxService(self.temp_dir.name, "mflux-community/qwen-image-2-1-turbo-mflux-q4", "reference")
+        self.assertEqual(service.validate_references(2, "图一的人穿上图2的衣服，保留<image1>背景"),
+                         "<image1>的人穿上<image2>的衣服，保留<image1>背景")
+        for count, prompt in ((0, "编辑"), (11, "编辑"), (2, "图三"), (2, "<image0>")):
+            with self.subTest(count=count, prompt=prompt), self.assertRaises(ValueError):
+                service.validate_references(count, prompt)
+        model = MagicMock()
+        model.generate_image.return_value.save.side_effect = lambda path: Path(path).touch()
+        references = [Path("one.png"), Path("two.png")]
+        result = service.generate("图一参考图二", 768, 1024, input_images=references, model=model)
+        arguments = model.generate_image.call_args.kwargs
+        self.assertEqual(arguments["image_paths"], references)
+        self.assertEqual(arguments["prompt"], "<image1>参考<image2>")
+        self.assertNotIn("image_path", arguments)
+        self.assertNotIn("image_strength", arguments)
+        self.assertEqual(result.metadata["referenceCount"], 2)
+        self.assertEqual(result.metadata["generationMode"], "reference")
+        with self.assertRaisesRegex(ValueError, "至少需要 2"):
+            service.validate_options(1)
+        with self.assertRaisesRegex(ValueError, "32 的倍数"):
+            service.validate_generation_dimensions(784, 1024)
+
+    def test_other_models_cannot_use_reference_editing(self):
+        self.service.generation_mode = "reference"
+        with self.assertRaisesRegex(ValueError, "仅支持 Qwen"):
+            self.service.validate_references(2, "图一和图二")
 
     @patch.object(MfluxService, "_load_model")
     def test_text_to_image_uses_krea_python_api(self, load_model):

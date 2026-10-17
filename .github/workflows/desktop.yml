@@ -1,0 +1,113 @@
+name: macOS 桌面版打包
+
+on:
+  push:
+    tags: ["desktop-v*"]
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "构建成功后发布预发布 Release"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    env:
+      APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - uses: dtolnay/rust-toolchain@stable
+      - name: 确认 Apple Silicon 构建环境
+        run: test "$(uname -m)" = arm64
+      - name: 安装锁定的依赖
+        run: |
+          uv sync --locked --group desktop --python 3.11
+          npm ci
+      - name: 前后端回归
+        run: |
+          uv lock --check
+          uv run --locked --group desktop python -m unittest discover -s tests
+          node --test tests/js/*.test.cjs
+      - name: 导入可选的 Developer ID 证书
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          if [ -n "$APPLE_CERTIFICATE" ]; then
+            CERTIFICATE_PATH="$RUNNER_TEMP/developer-id.p12"
+            KEYCHAIN_PATH="$RUNNER_TEMP/desktop-signing.keychain-db"
+            KEYCHAIN_PASSWORD="$(openssl rand -hex 32)"
+            printf '%s' "$APPLE_CERTIFICATE" | base64 --decode > "$CERTIFICATE_PATH"
+            security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+            security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+            security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+            security import "$CERTIFICATE_PATH" -k "$KEYCHAIN_PATH" -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security
+            security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+            security list-keychains -d user -s "$KEYCHAIN_PATH" "$HOME/Library/Keychains/login.keychain-db"
+            rm "$CERTIFICATE_PATH"
+          fi
+      - name: 构建应用与 DMG
+        run: |
+          if [ -z "$APPLE_SIGNING_IDENTITY" ]; then
+            unset APPLE_SIGNING_IDENTITY APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID
+          fi
+          npm run desktop:build -- --target aarch64-apple-darwin
+      - name: 验证安装包中的独立后端
+        run: |
+          uv run --locked --group desktop python scripts/smoke_desktop_backend.py \
+            "src-tauri/target/aarch64-apple-darwin/release/bundle/macos/mflux WebUI.app/Contents/Resources/backend/mflux-backend"
+      - name: 整理下载文件与校验值
+        run: |
+          mkdir -p dist/desktop
+          VERSION="$(node -p 'require("./src-tauri/tauri.conf.json").version')"
+          cp src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg "dist/desktop/mflux-WebUI_${VERSION}_macos-arm64.dmg"
+          ditto -c -k --sequesterRsrc --keepParent \
+            "src-tauri/target/aarch64-apple-darwin/release/bundle/macos/mflux WebUI.app" \
+            "dist/desktop/mflux-WebUI_${VERSION}_macos-arm64.app.zip"
+          cd dist/desktop
+          shasum -a 256 *.dmg *.zip > SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mflux-WebUI-macos-arm64
+          path: dist/desktop/
+          retention-days: 14
+      - name: 发布下载 Release
+        if: startsWith(github.ref, 'refs/tags/desktop-v') || inputs.publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="$(node -p 'require("./src-tauri/tauri.conf.json").version')"
+          RELEASE_TAG="desktop-v$VERSION"
+          if [[ "$GITHUB_REF" == refs/tags/desktop-v* ]]; then
+            RELEASE_TAG="$GITHUB_REF_NAME"
+          fi
+          cp docs/desktop-release-notes.md "$RUNNER_TEMP/release-notes.md"
+          if [ -z "$APPLE_SIGNING_IDENTITY" ]; then
+            printf '\n本次构建未配置 Developer ID 签名与 Apple 公证，仅作为预发布测试包。\n' >> "$RUNNER_TEMP/release-notes.md"
+          fi
+          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" --target "$GITHUB_SHA" --prerelease \
+              --title "mflux WebUI 桌面版 $VERSION" --notes-file "$RUNNER_TEMP/release-notes.md"
+          fi
+          gh release upload "$RELEASE_TAG" dist/desktop/* --clobber
