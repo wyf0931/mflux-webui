@@ -4,7 +4,6 @@ from pathlib import Path
 from uuid import uuid4
 
 from flask import Blueprint, current_app, jsonify, request
-from werkzeug.utils import secure_filename
 
 from .db import (
     clean_history,
@@ -102,7 +101,8 @@ def generate_image():
         service = MfluxService(_images_dir(), model_id=model_id, generation_mode=mode)
         service.validate_references(len(images), prompt)
         for input_image in images:
-            suffix = Path(secure_filename(input_image.filename)).suffix.lower()
+            # 保存名由 UUID 生成，只提取扩展名；secure_filename 会把全中文 basename 去掉。
+            suffix = Path(input_image.filename).suffix.lower()
             if suffix not in {".png", ".jpg", ".jpeg", ".webp"}:
                 return failure("参考图仅支持 PNG、JPG、JPEG 或 WebP", code=2303)
             uploads_dir = _images_dir().parent / "uploads"

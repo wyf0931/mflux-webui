@@ -16,7 +16,7 @@ class ApiTest(unittest.TestCase):
         self.app.extensions["generation_task_manager"] = manager
         fields = {"prompt": "图一参考图二", "modelId": "mflux-community/qwen-image-2-1-turbo-mflux-q4",
                   "generationMode": "reference", "images": [
-                      (io.BytesIO(b"one"), "one.png"), (io.BytesIO(b"two"), "two.png"),
+                      (io.BytesIO(b"one"), "图一.png"), (io.BytesIO(b"two"), "衣服.png"),
                   ]}
         response = self.client.post("/api/generate", data=fields, content_type="multipart/form-data")
         self.assertEqual(response.status_code, 202)
