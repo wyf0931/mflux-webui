@@ -36,8 +36,8 @@ Alpine.data("theme", () => ({
 }));
 
 Alpine.data("generationPage", () => ({
-  models: [], result: null, error: "", submitting: false, task: null, pollTimer: null, showAdvanced: false, imageName: "", referenceFile: null, imagePreview: "", imageStatus: "", elapsedSeconds: 0, elapsedTimer: null, reuseNotice: "",
-  form: { modelId: "", prompt: "", width: 768, height: 1376, steps: 8, guidance: "", seed: "", imageStrength: 0.35 },
+  models: [], result: null, error: "", submitting: false, task: null, pollTimer: null, showAdvanced: false, imageName: "", referenceFile: null, imagePreview: "", referenceImages: [], imageStatus: "", elapsedSeconds: 0, elapsedTimer: null, reuseNotice: "",
+  form: { modelId: "", prompt: "", width: 768, height: 1376, steps: 8, guidance: "", seed: "", imageStrength: 0.35, generationMode: "img2img" },
   preset: "portrait-9-16",
   presets: [
     { id: "square", icon: "□", ratio: "1:1", width: 1024, height: 1024 },
@@ -53,6 +53,7 @@ Alpine.data("generationPage", () => ({
   get selectedModel() { return this.models.find((model) => model.repoId === this.form.modelId); },
   get selectedPreset() { return this.presets.find((preset) => preset.id === this.preset); },
   get isQwenTurbo() { return this.selectedModel?.family === "Qwen Image 2.1 Turbo"; },
+  get referenceEditing() { return this.isQwenTurbo && this.form.generationMode === "reference"; },
   get guidanceEditable() { return this.selectedModel?.guidanceMode === "editable"; },
   get guidanceHint() {
     if (this.isQwenTurbo) return "Turbo 无需 CFG，引导系数固定为 1.0。";
@@ -63,10 +64,25 @@ Alpine.data("generationPage", () => ({
   get canReadClipboard() { return Boolean(navigator.clipboard?.read); },
   async init() { try { this.models = (await apiClient.get("/api/models/catalog")).filter((model) => model.installed); this.form.modelId = this.models[0]?.repoId || ""; this.changeModel(); this.applyReuseParams(); } catch (error) { this.error = error.message; } },
   changeModel() {
+    if (!this.isQwenTurbo) this.form.generationMode = "img2img";
+    this.changeGenerationMode();
     this.form.steps = this.selectedModel?.steps || 8;
     this.form.guidance = this.selectedModel?.guidanceMode === "fixed" ? this.selectedModel.guidance : "";
   },
-  destroy() { this.stopElapsed(); this.stopPolling(); if (this.imagePreview) URL.revokeObjectURL(this.imagePreview); },
+  destroy() { this.stopElapsed(); this.stopPolling(); this.referenceImages.forEach((image) => URL.revokeObjectURL(image.preview)); },
+  syncReferences() {
+    this.referenceFile = this.referenceImages[0]?.file || null;
+    this.imagePreview = this.referenceImages[0]?.preview || "";
+    this.imageName = this.referenceImages[0]?.name || "";
+  },
+  changeGenerationMode() {
+    if (!this.referenceEditing && this.referenceImages.length > 1) {
+      this.referenceImages.splice(1).forEach((image) => URL.revokeObjectURL(image.preview));
+      this.imageStatus = "保持构图模式仅保留第一张参考图。";
+    }
+    this.syncReferences();
+  },
+  insertReference(index) { this.form.prompt += ` <image${index + 1}>`; },
   applyReuseParams() {
     const stored = localStorage.getItem("mflux.reuseGeneration");
     if (!stored) return;
@@ -75,6 +91,7 @@ Alpine.data("generationPage", () => ({
       const params = JSON.parse(stored);
       this.form.modelId = params.modelId || this.form.modelId;
       this.changeModel();
+      this.form.generationMode = this.isQwenTurbo && params.generationMode === "reference" ? "reference" : "img2img";
       this.form.prompt = params.prompt || "";
       this.form.width = Number(params.width) || this.form.width;
       this.form.height = Number(params.height) || this.form.height;
@@ -85,7 +102,7 @@ Alpine.data("generationPage", () => ({
       if (params.imageStrength !== null && params.imageStrength !== undefined) this.form.imageStrength = Number(params.imageStrength);
       this.showAdvanced = Boolean(this.form.guidance || this.form.seed || params.hasReference);
       this.syncPreset();
-      if (params.hasReference) this.reuseNotice = "已恢复参数，请重新选择或粘贴参考图。";
+      if (params.hasReference) this.reuseNotice = this.referenceEditing ? "已恢复多参考图参数，请按原顺序重新添加参考图。" : "已恢复参数，请重新选择或粘贴参考图。";
     } catch (_error) {
       this.reuseNotice = "历史参数读取失败，请手动填写生成参数。";
     }
@@ -97,15 +114,18 @@ Alpine.data("generationPage", () => ({
     if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
       this.error = "参考图仅支持 PNG、JPG、WebP。"; return;
     }
-    if (this.imagePreview) URL.revokeObjectURL(this.imagePreview);
+    if (this.referenceEditing && this.referenceImages.length >= 10) {
+      this.error = "最多添加 10 张参考图。"; return;
+    }
+    if (!this.referenceEditing) this.referenceImages.splice(0).forEach((image) => URL.revokeObjectURL(image.preview));
     const extension = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" }[file.type];
-    this.referenceFile = pasted ? new File([file], `clipboard-${Date.now()}.${extension}`, { type: file.type }) : file;
-    this.imageName = pasted ? "剪贴板图片" : file.name;
-    this.imagePreview = URL.createObjectURL(this.referenceFile);
+    const reference = pasted ? new File([file], `clipboard-${Date.now()}.${extension}`, { type: file.type }) : file;
+    this.referenceImages.push({ file: reference, name: pasted ? "剪贴板图片" : file.name, preview: URL.createObjectURL(reference) });
+    this.syncReferences();
     this.imageStatus = pasted ? "已粘贴参考图，生成时自动上传。" : "已选择参考图，生成时自动上传。";
     this.showAdvanced = true; this.error = "";
   },
-  chooseImage(event) { this.setReferenceImage(event.target.files[0]); event.target.value = ""; },
+  chooseImage(event) { Array.from(event.target.files || []).forEach((file) => this.setReferenceImage(file)); event.target.value = ""; },
   pasteImage(event) {
     if (this.submitting) return;
     const item = Array.from(event.clipboardData?.items || []).find((item) => item.kind === "file" && item.type.startsWith("image/"));
@@ -122,9 +142,10 @@ Alpine.data("generationPage", () => ({
       this.error = "剪贴板中没有可用图片，请先复制图片或截图。";
     } catch (_error) { this.error = "无法读取剪贴板，请直接按 ⌘V 或 Ctrl+V 粘贴图片。"; }
   },
-  removeReferenceImage() {
-    if (this.imagePreview) URL.revokeObjectURL(this.imagePreview);
-    this.referenceFile = null; this.imagePreview = ""; this.imageName = "";
+  removeReferenceImage(index = null) {
+    const removed = index === null ? this.referenceImages.splice(0) : this.referenceImages.splice(index, 1);
+    removed.forEach((image) => URL.revokeObjectURL(image.preview));
+    this.syncReferences();
     this.imageStatus = "已移除参考图。"; this.$refs.image.value = "";
   },
   startElapsed() { this.elapsedSeconds = 0; this.elapsedTimer = window.setInterval(() => { this.elapsedSeconds += 1; }, 1000); },
@@ -153,7 +174,12 @@ Alpine.data("generationPage", () => ({
     this.error = ""; this.result = null; this.task = null; this.stopPolling(); this.submitting = true; this.startElapsed();
     try {
       const body = new FormData(this.$refs.form);
-      if (this.referenceFile) body.set("image", this.referenceFile, this.referenceFile.name);
+      body.set("generationMode", this.form.generationMode);
+      if (this.referenceEditing) {
+        if (!this.referenceImages.length) throw new Error("请添加至少一张参考图。");
+        body.delete("image"); body.delete("imageStrength");
+        this.referenceImages.forEach((image) => body.append("images", image.file, image.file.name));
+      } else if (this.referenceFile) body.set("image", this.referenceFile, this.referenceFile.name);
       else { body.delete("image"); body.delete("imageStrength"); }
       if (!this.guidanceEditable) body.delete("guidance");
       if (!body.get("guidance")) body.delete("guidance"); if (!body.get("seed")) body.delete("seed");
@@ -199,7 +225,8 @@ Alpine.data("galleryPage", () => ({
     localStorage.setItem("mflux.reuseGeneration", JSON.stringify({
       modelId: image.model, prompt: image.prompt, width: image.width, height: image.height,
       steps: metadata.steps, guidance: metadata.guidance, seed: metadata.seed,
-      imageStrength: metadata.imageStrength, hasReference: metadata.imageStrength !== null && metadata.imageStrength !== undefined,
+      imageStrength: metadata.imageStrength, generationMode: metadata.generationMode,
+      hasReference: Boolean(metadata.referenceCount) || (metadata.imageStrength !== null && metadata.imageStrength !== undefined),
     }));
     window.location.href = "/";
   },

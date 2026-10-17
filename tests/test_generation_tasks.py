@@ -5,8 +5,12 @@ from typing import ClassVar
 from unittest.mock import patch
 
 import mflux_webui.db as db_module
-from mflux_webui.generation_tasks import GenerationTaskManager, QueueFullError
-from mflux_webui.mflux_service import GenerationResult
+from mflux_webui.generation_tasks import (
+    GenerationTaskManager,
+    ModelCache,
+    QueueFullError,
+)
+from mflux_webui.mflux_service import GenerationResult, MfluxService
 
 
 class FakeService:
@@ -39,6 +43,32 @@ class FakeService:
 
 
 class GenerationTaskManagerTest(unittest.TestCase):
+    def test_qwen_text_and_edit_modes_do_not_share_model_instances(self):
+        cache = ModelCache()
+        plain = MfluxService(self.temp_dir.name, "mflux-community/qwen-image-2-1-turbo-mflux-q4")
+        edit = MfluxService(self.temp_dir.name, plain.model_id, "reference")
+        one, two, three = object(), object(), object()
+        with patch.object(MfluxService, "load_model", side_effect=[one, two, three]) as loader:
+            self.assertIs(cache.get(plain), one)
+            self.assertIs(cache.get(plain), one)
+            self.assertIs(cache.get(edit), two)
+            self.assertNotIn(plain.cache_key, cache._models)
+            self.assertIs(cache.get(plain), three)
+            self.assertNotIn(edit.cache_key, cache._models)
+            self.assertEqual(loader.call_count, 3)
+
+    def test_reference_files_are_removed_after_success_and_failure(self):
+        for prompt in ("multi", "broken"):
+            paths = [Path(self.temp_dir.name) / f"{prompt}-{i}.png" for i in range(2)]
+            for path in paths:
+                path.touch()
+            params = {**self.params(prompt), "generation_mode": "reference"}
+            task = self.manager.submit(params, input_paths=paths)
+            self.manager._run_task(task["taskId"])
+            self.assertTrue(all(not path.exists() for path in paths))
+            result = self.manager.get_task(task["taskId"])
+            self.assertEqual(result["status"], "failed" if prompt == "broken" else "succeeded")
+
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.db_file = Path(self.temp_dir.name) / "db.json"

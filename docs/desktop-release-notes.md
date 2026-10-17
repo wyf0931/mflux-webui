@@ -1,5 +1,7 @@
 macOS Apple Silicon 桌面版，使用 Tauri 2 与内置 Python/mflux 后端。
 
+本版修复 Krea 已有完整分片缓存仍报缺少 `turbo.safetensors` 的问题，并为 Qwen Image 2.1 Turbo 增加原生多参考图编辑：高级选项中切换模式后可添加 1–10 张图片，通过“图一、图二”或 `<image1>`、`<image2>` 引用。
+
 - 安装 `.dmg` 后将应用拖入「应用程序」，也可以下载 `.app.zip` 解压使用。
 - 无需安装 Python、Node.js、uv 或手动启动服务。
 - 保留模型库、Hugging Face / ModelScope 下载、文生图、参考图生图、队列、任务日志、画廊与明暗主题。

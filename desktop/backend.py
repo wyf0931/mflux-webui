@@ -90,6 +90,7 @@ def self_test():
     from mflux.models.common.config import ModelConfig
     from mflux.models.flux2 import Flux2Klein
     from mflux.models.krea2 import Krea2
+    from mflux.models.qwen21.variants.edit.qwen_image_21_edit import QwenImage21Edit
     from mflux.models.qwen21.variants.txt2img.qwen_image_21 import QwenImage21
     from mflux.models.z_image import ZImageTurbo
     from modelscope.hub.snapshot_download import snapshot_download
@@ -102,7 +103,7 @@ def self_test():
     print(json.dumps({"metal": True, "tokenizers": [AutoTokenizer.__name__, Qwen2TokenizerFast.__name__],
                       "modelscope": callable(snapshot_download), "models": [
         ModelConfig.__name__, Flux2Klein.__name__, Krea2.__name__,
-        QwenImage21.__name__, ZImageTurbo.__name__,
+        QwenImage21.__name__, QwenImage21Edit.__name__, ZImageTurbo.__name__,
     ]}), flush=True)
 
 

@@ -123,5 +123,7 @@ def catalog_models(installed_ids=(), sources=None):
             "guidance": spec.guidance, "guidanceMode": spec.guidance_mode,
             "scheduler": spec.scheduler,
             "installed": is_installed, "supportsImageToImage": spec.supports_image_to_image,
+            "supportsReferenceEditing": spec.backend == "qwen21",
+            "maxReferenceImages": 10 if spec.backend == "qwen21" else 1,
         })
     return models
