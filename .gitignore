@@ -24,3 +24,6 @@ src-tauri/gen/
 data/*.json
 data/images/*.png
 !data/images/.gitkeep
+
+# macOS
+.DS_Store
