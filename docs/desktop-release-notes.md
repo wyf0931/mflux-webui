@@ -1,3 +1,5 @@
+# 桌面版发布说明
+
 macOS Apple Silicon 桌面版，使用 Tauri 2 与内置 Python/mflux 后端。
 
 本版新增参考图提示词分析：在生图页对任意参考图点击「AI 描述」，可用本地 Qwen3-VL 生成一句英文提示词与七个结构化维度，支持复制或直接填入提示词。关注点可选填，例如“聚焦人物”“光线氛围”。视觉模型权重不含在安装包内，首次使用需执行 `hf download lmstudio-community/Qwen3-VL-8B-Instruct-MLX-4bit`，详见 `docs/image-description.md`。
