@@ -1,6 +1,7 @@
 import json
 import threading
 from pathlib import Path
+from typing import Any, cast
 
 from tinydb import Query, TinyDB
 
@@ -116,11 +117,12 @@ def create_generation_task(task):
             db.close()
 
 
-def get_generation_task(task_id):
+def get_generation_task(task_id) -> dict[str, Any] | None:
     with _db_lock:
         db = _get_db()
         try:
-            return db.table(TASK_TABLE).get(Query().task_id == task_id)
+            task = cast(Any, db.table(TASK_TABLE).get(Query().task_id == task_id))
+            return dict(task) if task else None
         finally:
             db.close()
 

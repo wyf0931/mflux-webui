@@ -129,6 +129,54 @@ class ApiTest(unittest.TestCase):
         self.assertEqual(qwen["guidanceMode"], "fixed")
         self.assertEqual(next(model for model in models if model["family"] == "Z-Image Turbo")["guidanceMode"], "ignored")
 
+    def test_describe_reference_returns_prompt_and_structure_and_cleans_upload(self):
+        service = Mock()
+        service.describe.return_value = {
+            "model": "local-vlm", "duration": 1.2,
+            "prompt": "A woman by the window.", "structure": [{"label": "构图与布局", "value": "居中"}],
+        }
+        self.app.extensions["vlm_service"] = service
+        response = self.client.post("/api/describe", data={
+            "focus": " 人物 ", "image": (io.BytesIO(b"png bytes"), "参考图.png"),
+        }, content_type="multipart/form-data")
+        payload = response.get_json()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(payload["data"]["prompt"], "A woman by the window.")
+        self.assertEqual(payload["data"]["structure"][0]["label"], "构图与布局")
+        image_path = service.describe.call_args.args[0]
+        self.assertEqual(service.describe.call_args.kwargs["focus"], "人物")
+        self.assertFalse(image_path.exists())
+        uploads = self.images_dir.parent / "uploads"
+        self.assertEqual(list(uploads.iterdir()) if uploads.exists() else [], [])
+
+    def test_describe_rejects_missing_or_unsupported_image(self):
+        response = self.client.post("/api/describe", data={"focus": "人物"}, content_type="multipart/form-data")
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("请先选择一张参考图", response.get_json()["message"])
+        response = self.client.post("/api/describe", data={
+            "image": (io.BytesIO(b"gif bytes"), "bad.gif"),
+        }, content_type="multipart/form-data")
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("仅支持", response.get_json()["message"])
+        uploads = self.images_dir.parent / "uploads"
+        self.assertEqual(list(uploads.iterdir()) if uploads.exists() else [], [])
+
+    def test_describe_reports_missing_model_as_standard_error(self):
+        service = Mock()
+        service.describe.side_effect = ValueError("本地未找到视觉模型 example/vlm")
+        self.app.extensions["vlm_service"] = service
+        response = self.client.post("/api/describe", data={
+            "image": (io.BytesIO(b"png bytes"), "reference.png"),
+        }, content_type="multipart/form-data")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.get_json()["code"], 2306)
+
+    def test_generation_page_exposes_reference_description(self):
+        response = self.client.get("/")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("参考图提示词".encode(), response.data)
+        self.assertIn("AI 描述".encode(), response.data)
+
     def test_formatters(self):
         self.assertEqual(self.app.jinja_env.filters["timestamp"]("2026-03-30-16-24-59"), "2026-03-30 16:24:59")
         self.assertEqual(self.app.jinja_env.filters["duration"](212.4), "3分32.4秒")

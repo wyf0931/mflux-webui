@@ -11,9 +11,9 @@ datas = [
     (str(root / "config/models.json"), "config"),
     (str(root / "LICENSE"), "licenses/mflux-webui"),
 ]
-for package in ("mflux", "mlx", "transformers", "modelscope"):
+for package in ("mflux", "mlx", "mlx_vlm", "transformers", "modelscope"):
     datas += collect_data_files(package)
-for distribution in ("mflux", "mlx", "mlx-metal", "modelscope"):
+for distribution in ("mflux", "mlx", "mlx-metal", "mlx-vlm", "modelscope"):
     datas += copy_metadata(distribution)
 
 # TokenizerLoader 通过字符串查找这些类，静态分析无法发现。
@@ -23,6 +23,8 @@ hiddenimports = [
     "transformers.models.t5.tokenization_t5",
     "transformers.models.qwen2.tokenization_qwen2",
     "transformers.models.qwen2_vl.image_processing_pil_qwen2_vl",
+    "transformers.models.qwen3_vl.processing_qwen3_vl",
+    "transformers.models.qwen3_vl.video_processing_qwen3_vl",
     "sentencepiece",
     "socksio",
 ]

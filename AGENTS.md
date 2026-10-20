@@ -2,7 +2,7 @@
 
 ## 产品范围
 
-本项目是 mflux WebUI：使用 Flask、Alpine.js 与 DaisyUI 提供 Qwen Image 2.1 Turbo、Krea 2 Turbo、Z-Image Turbo 和 FLUX.2 Klein 的模型库、文生图、文+图生图和画廊。不要重新引入 Ollama、Docker 或其他推理引擎，除非用户明确要求。
+本项目是 mflux WebUI：使用 Flask、Alpine.js 与 DaisyUI 提供 Qwen Image 2.1 Turbo、Krea 2 Turbo、Z-Image Turbo 和 FLUX.2 Klein 的模型库、文生图、文+图生图、参考图提示词分析（本地 Qwen3-VL）和画廊。不要重新引入 Ollama、Docker 或其他推理引擎，除非用户明确要求。
 
 ## 开发与运行
 

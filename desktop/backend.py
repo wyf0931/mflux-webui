@@ -87,6 +87,8 @@ def protect_desktop_app(app, token, port, data_dir=None):
 def self_test():
     """在冻结环境实际导入全部模型，并执行一次 Metal 运算（不下载权重）。"""
     import mlx.core as mx
+    import mlx_vlm
+    import transformers
     from mflux.models.common.config import ModelConfig
     from mflux.models.flux2 import Flux2Klein
     from mflux.models.krea2 import Krea2
@@ -94,13 +96,17 @@ def self_test():
     from mflux.models.qwen21.variants.txt2img.qwen_image_21 import QwenImage21
     from mflux.models.z_image import ZImageTurbo
     from modelscope.hub.snapshot_download import snapshot_download
-    from transformers import AutoTokenizer, Qwen2TokenizerFast
+    from transformers import AutoTokenizer
+
+    # 5.x 通过惰性导出提供该类，静态分析看不到，用 getattr 保留自检。
 
     mx.set_default_device(mx.gpu)
     result = mx.sum(mx.array([1.0, 2.0, 3.0])).item()
     if result != 6.0:
         raise RuntimeError("Metal 运算自检失败")
-    print(json.dumps({"metal": True, "tokenizers": [AutoTokenizer.__name__, Qwen2TokenizerFast.__name__],
+    qwen2_tokenizer = getattr(transformers, "Qwen2TokenizerFast")
+    print(json.dumps({"metal": True, "mlxVlm": mlx_vlm.__name__,
+                      "tokenizers": [AutoTokenizer.__name__, qwen2_tokenizer.__name__],
                       "modelscope": callable(snapshot_download), "models": [
         ModelConfig.__name__, Flux2Klein.__name__, Krea2.__name__,
         QwenImage21.__name__, QwenImage21Edit.__name__, ZImageTurbo.__name__,

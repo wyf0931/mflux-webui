@@ -19,6 +19,13 @@ const formatDuration = (value) => {
   const minutes = Math.floor(seconds / 60); const remaining = seconds % 60;
   return minutes < 60 ? `${minutes}分${remaining.toFixed(1)}秒` : `${Math.floor(minutes / 60)}时${minutes % 60}分${remaining.toFixed(1)}秒`;
 };
+const copyToClipboard = async (text) => {
+  try { await navigator.clipboard.writeText(text); }
+  catch (_error) {
+    const area = document.createElement("textarea");
+    area.value = text; document.body.append(area); area.select(); document.execCommand("copy"); area.remove();
+  }
+};
 const formatTimestamp = (value) => value ? value.replace(/^(\d{4})-(\d{2})-(\d{2})-(\d{2})-(\d{2})-(\d{2}).*$/, "$1-$2-$3 $4:$5:$6") : "—";
 const formatDateTime = (value) => value ? new Date(value).toLocaleString("zh-CN", { hour12: false }) : "—";
 
@@ -36,7 +43,7 @@ Alpine.data("theme", () => ({
 }));
 
 Alpine.data("generationPage", () => ({
-  models: [], result: null, error: "", submitting: false, task: null, pollTimer: null, showAdvanced: false, imageName: "", referenceFile: null, imagePreview: "", referenceImages: [], imageStatus: "", elapsedSeconds: 0, elapsedTimer: null, reuseNotice: "",
+  models: [], result: null, error: "", submitting: false, task: null, pollTimer: null, showAdvanced: false, imageName: "", referenceFile: null, imagePreview: "", referenceImages: [], imageStatus: "", elapsedSeconds: 0, elapsedTimer: null, reuseNotice: "", describeIndex: null, describeFocus: "", describing: false, describeError: "", description: null, describeTab: "prompt", copied: "",
   form: { modelId: "", prompt: "", width: 768, height: 1376, steps: 8, guidance: "", seed: "", imageStrength: 0.35, generationMode: "img2img" },
   preset: "portrait-9-16",
   presets: [
@@ -54,6 +61,13 @@ Alpine.data("generationPage", () => ({
   get selectedPreset() { return this.presets.find((preset) => preset.id === this.preset); },
   get isQwenTurbo() { return this.selectedModel?.family === "Qwen Image 2.1 Turbo"; },
   get referenceEditing() { return this.isQwenTurbo && this.form.generationMode === "reference"; },
+  get describeImage() { return this.describeIndex === null ? null : this.referenceImages[this.describeIndex] || null; },
+  get structureMarkdown() {
+    const rows = this.description?.structure || [];
+    if (!rows.length) return "";
+    const cell = (value) => String(value).replace(/\|/g, "\\|").replace(/\s*\n\s*/g, " ");
+    return ["| 维度 | 内容 |", "| --- | --- |", ...rows.map((row) => `| ${cell(row.label)} | ${cell(row.value)} |`)].join("\n");
+  },
   get guidanceEditable() { return this.selectedModel?.guidanceMode === "editable"; },
   get guidanceHint() {
     if (this.isQwenTurbo) return "Turbo 无需 CFG，引导系数固定为 1.0。";
@@ -148,6 +162,35 @@ Alpine.data("generationPage", () => ({
     this.syncReferences();
     this.imageStatus = "已移除参考图。"; this.$refs.image.value = "";
   },
+  openDescribe(index) {
+    this.describeIndex = index; this.describeFocus = ""; this.description = null;
+    this.describeError = ""; this.describeTab = "prompt"; this.copied = "";
+    this.$refs.describeDialog?.showModal();
+  },
+  async runDescribe() {
+    const image = this.describeImage;
+    if (!image || this.describing) return;
+    this.describing = true; this.describeError = ""; this.description = null; this.copied = "";
+    try {
+      const body = new FormData();
+      body.append("image", image.file, image.file.name);
+      body.append("focus", this.describeFocus);
+      this.description = await apiClient.request("/api/describe", { method: "POST", body });
+      this.describeTab = "prompt";
+    } catch (error) { this.describeError = error.message; }
+    finally { this.describing = false; }
+  },
+  applyDescription() {
+    if (!this.description?.prompt) return;
+    this.form.prompt = this.description.prompt;
+    this.$refs.describeDialog?.close();
+  },
+  async copyDescribe(text, key) {
+    if (!text) return;
+    await copyToClipboard(text);
+    this.copied = key;
+    window.setTimeout(() => { if (this.copied === key) this.copied = ""; }, 1500);
+  },
   startElapsed() { this.elapsedSeconds = 0; this.elapsedTimer = window.setInterval(() => { this.elapsedSeconds += 1; }, 1000); },
   stopElapsed() { if (this.elapsedTimer) window.clearInterval(this.elapsedTimer); this.elapsedTimer = null; },
   stopPolling() { if (this.pollTimer) window.clearInterval(this.pollTimer); this.pollTimer = null; },
@@ -231,7 +274,7 @@ Alpine.data("galleryPage", () => ({
     window.location.href = "/";
   },
   async remove(timestamp) { if (!confirm("确定要删除这张图片吗？此操作无法撤销。")) return; try { await apiClient.delete(`/api/history/${timestamp}`); this.images = this.images.filter((image) => image.timestamp !== timestamp); } catch (error) { this.error = error.message; } },
-  async copy(prompt) { try { await navigator.clipboard.writeText(prompt); } catch (_error) { const area = document.createElement("textarea"); area.value = prompt; document.body.append(area); area.select(); document.execCommand("copy"); area.remove(); } },
+  async copy(prompt) { await copyToClipboard(prompt); },
   formatDuration, formatTimestamp,
 }));
 
