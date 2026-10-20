@@ -43,7 +43,7 @@ Alpine.data("theme", () => ({
 }));
 
 Alpine.data("generationPage", () => ({
-  models: [], result: null, error: "", submitting: false, task: null, pollTimer: null, showAdvanced: false, imageName: "", referenceFile: null, imagePreview: "", referenceImages: [], imageStatus: "", elapsedSeconds: 0, elapsedTimer: null, reuseNotice: "", describeIndex: null, describeFocus: "", describing: false, describeError: "", description: null, describeTab: "prompt", copied: "",
+  models: [], result: null, error: "", submitting: false, task: null, pollTimer: null, showAdvanced: false, imageName: "", referenceFile: null, imagePreview: "", referenceImages: [], imageStatus: "", elapsedSeconds: 0, elapsedTimer: null, reuseNotice: "", describeIndex: null, describeAutoOpen: false, describeFocus: "", describing: false, describeError: "", description: null, describeTab: "prompt", copied: "",
   form: { modelId: "", prompt: "", width: 768, height: 1376, steps: 8, guidance: "", seed: "", imageStrength: 0.35, generationMode: "img2img" },
   preset: "portrait-9-16",
   presets: [
@@ -139,7 +139,20 @@ Alpine.data("generationPage", () => ({
     this.imageStatus = pasted ? "已粘贴参考图，生成时自动上传。" : "已选择参考图，生成时自动上传。";
     this.showAdvanced = true; this.error = "";
   },
-  chooseImage(event) { Array.from(event.target.files || []).forEach((file) => this.setReferenceImage(file)); event.target.value = ""; },
+  chooseImage(event) {
+    const start = this.referenceImages.length;
+    Array.from(event.target.files || []).forEach((file) => this.setReferenceImage(file));
+    event.target.value = "";
+    const autoOpen = this.describeAutoOpen;
+    this.describeAutoOpen = false;
+    if (autoOpen && this.referenceImages.length > start) { this.showAdvanced = true; this.openDescribe(start); }
+  },
+  describeFromReference() {
+    if (this.submitting) return;
+    if (this.referenceImages.length) { this.showAdvanced = true; this.openDescribe(0); return; }
+    this.describeAutoOpen = true;
+    this.$refs.image.click();
+  },
   pasteImage(event) {
     if (this.submitting) return;
     const item = Array.from(event.clipboardData?.items || []).find((item) => item.kind === "file" && item.type.startsWith("image/"));

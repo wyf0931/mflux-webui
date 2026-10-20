@@ -176,3 +176,24 @@ test("参考图描述失败时展示错误并清空旧结果", async () => {
   assert.equal(page.description, null);
   assert.match(page.describeError, /本地未找到视觉模型/);
 });
+
+test("提示词旁入口直接选择参考图并打开描述弹窗", () => {
+  const { page } = setup();
+  let picked = 0;
+  let opened = 0;
+  page.$refs = {
+    image: { value: "", click() { picked++; } },
+    describeDialog: { showModal() { opened++; }, close() {} },
+  };
+  page.describeFromReference();
+  assert.equal(picked, 1);
+  assert.equal(page.describeAutoOpen, true);
+  page.chooseImage({ target: { files: [new File(["png"], "ref.png", { type: "image/png" })], value: "files" } });
+  assert.equal(opened, 1);
+  assert.equal(page.describeIndex, 0);
+  assert.equal(page.showAdvanced, true);
+  assert.equal(page.describeAutoOpen, false);
+  page.describeFromReference();
+  assert.equal(picked, 1);
+  assert.equal(opened, 2);
+});
