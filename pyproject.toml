@@ -8,6 +8,7 @@ dependencies = [
     "flask>=3.0.0",
     "huggingface-hub>=0.30.0",
     "mflux==0.22.0",
+    "mlx-vlm==0.6.3",
     "modelscope>=1.27.0",
     "python-dotenv>=1.0.0",
     "socksio>=1.0.0",

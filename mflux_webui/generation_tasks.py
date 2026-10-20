@@ -227,13 +227,14 @@ class GenerationTaskManager:
 
     def _run_task(self, task_id):
         task = get_generation_task(task_id)
-        if not task or task["status"] != "pending":
+        if not task or task.get("status") != "pending":
             return
+        task = dict(task)
 
         update_generation_task(task_id, {"status": "running", "started_at": self._now()})
         input_path = Path(task["input_path"]) if task.get("input_path") else None
         input_paths = [Path(path) for path in task.get("input_paths", [])]
-        params = task["params"]
+        params = dict(task["params"])
         try:
             service = self._service_factory(self.images_dir, model_id=params["model_id"])
             service.generation_mode = params.get("generation_mode", "img2img")

@@ -8,6 +8,7 @@ from .api import api as _api
 from .api import failure
 from .generation_tasks import GenerationTaskManager
 from .paths import DATA_DIR
+from .vlm_service import VlmService
 
 
 def create_app():
@@ -18,6 +19,7 @@ def create_app():
     app.config["IMAGES_DIR"] = str(images_dir)
     app.register_blueprint(_api)
     app.extensions["generation_task_manager"] = GenerationTaskManager(images_dir)
+    app.extensions["vlm_service"] = VlmService()
 
     @app.template_filter("timestamp")
     def format_timestamp(value):

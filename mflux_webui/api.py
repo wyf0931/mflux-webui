@@ -16,8 +16,10 @@ from .mflux_service import MODEL_ID, MfluxService
 from .model_cache import get_cached_models
 from .model_downloader import download_manager
 from .model_registry import catalog_models, configured_sources, get_model_spec
+from .vlm_service import VlmService
 
 api = Blueprint("api", __name__, url_prefix="/api")
+ALLOWED_IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp"}
 
 
 def success(data=None, message="ok", status=200):
@@ -36,6 +38,25 @@ def _images_dir():
 
 def _task_manager():
     return current_app.extensions["generation_task_manager"]
+
+
+def _vlm_service():
+    service = current_app.extensions.get("vlm_service")
+    if service is None:
+        service = current_app.extensions["vlm_service"] = VlmService()
+    return service
+
+
+def _save_upload(input_image):
+    """把上传图片保存到临时上传目录，返回路径与后缀校验错误。"""
+    suffix = Path(input_image.filename).suffix.lower()
+    if suffix not in ALLOWED_IMAGE_SUFFIXES:
+        return None, "参考图仅支持 PNG、JPG、JPEG 或 WebP"
+    uploads_dir = _images_dir().parent / "uploads"
+    uploads_dir.mkdir(parents=True, exist_ok=True)
+    path = uploads_dir / f"{uuid4().hex}{suffix}"
+    input_image.save(path)
+    return path, None
 
 
 @api.get("/models/cache")
@@ -102,14 +123,10 @@ def generate_image():
         service.validate_references(len(images), prompt)
         for input_image in images:
             # 保存名由 UUID 生成，只提取扩展名；secure_filename 会把全中文 basename 去掉。
-            suffix = Path(input_image.filename).suffix.lower()
-            if suffix not in {".png", ".jpg", ".jpeg", ".webp"}:
-                return failure("参考图仅支持 PNG、JPG、JPEG 或 WebP", code=2303)
-            uploads_dir = _images_dir().parent / "uploads"
-            uploads_dir.mkdir(parents=True, exist_ok=True)
-            input_path = uploads_dir / f"{uuid4().hex}{suffix}"
+            input_path, error = _save_upload(input_image)
+            if error:
+                return failure(error, code=2303)
             input_paths.append(input_path)
-            input_image.save(input_path)
 
         validated = MfluxService.validate_params(
             data.get("width", 768), data.get("height", 1024),
@@ -145,6 +162,29 @@ def generate_image():
             path.unlink(missing_ok=True)
 
 
+@api.post("/describe")
+def describe_reference():
+    """分析参考图，返回一句提示词与结构化维度。"""
+    images = [image for image in request.files.getlist("image") if image.filename]
+    if not images:
+        return failure("请先选择一张参考图", code=2306)
+    if len(images) > 1:
+        return failure("每次只能分析一张参考图", code=2306)
+    focus = (request.form.get("focus") or "").strip()
+    image_path, error = _save_upload(images[0])
+    if error or image_path is None:
+        return failure(error or "参考图上传失败", code=2303)
+    try:
+        return success(_vlm_service().describe(image_path, focus=focus))
+    except ValueError as exc:
+        return failure(str(exc), code=2306)
+    except Exception as exc:
+        current_app.logger.exception("参考图分析失败")
+        return failure(f"参考图分析失败：{exc}", code=2502, status=500)
+    finally:
+        image_path.unlink(missing_ok=True)
+
+
 @api.get("/generate/tasks")
 def generation_tasks():
     return success(_task_manager().list_tasks())
@@ -167,7 +207,7 @@ def history():
 @api.delete("/history/<timestamp>")
 def delete_image(timestamp):
     entry = get_history_by_timestamp(timestamp)
-    if not entry:
+    if not isinstance(entry, dict):
         return failure("记录不存在", code=2404, status=404)
     try:
         image_path = Path(entry["image_path"])

@@ -6,9 +6,10 @@ import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 from .checkpoints import resolve_krea_checkpoint
-from .model_registry import get_model_spec
+from .model_registry import ModelSpec, get_model_spec
 
 MODEL_ID = "mflux-community/krea-2-turbo-mflux-q4"
 # Krea 2 Turbo 是 CFG 1.0 蒸馏模型；更高的引导系数会偏离官方采样设置并损伤画面质量。
@@ -35,9 +36,10 @@ class MfluxService:
         self.images_dir.mkdir(parents=True, exist_ok=True)
         self.model_id = model_id
         self.generation_mode = generation_mode
-        self.spec = get_model_spec(model_id)
-        if not self.spec:
+        spec = get_model_spec(model_id)
+        if not spec:
             raise ValueError("暂不支持该模型")
+        self.spec: ModelSpec = spec
 
     @property
     def cache_key(self):
@@ -162,7 +164,7 @@ class MfluxService:
         started_at = time.monotonic()
         try:
             model = model or self.load_model()
-            arguments = dict(
+            arguments: dict[str, Any] = dict(
                 seed=seed,
                 prompt=encoded_prompt,
                 num_inference_steps=steps,
