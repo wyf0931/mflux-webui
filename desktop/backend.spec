@@ -35,6 +35,14 @@ for source in mlx_path.rglob("*.py"):
     if parts[-1] == "__init__":
         parts.pop()
     hiddenimports.append(".".join(["mlx", *parts]))
+# mlx-vlm 按 model_type 动态加载模型与投机解码模块，同样需要显式收集。
+for package in ("mlx_vlm", "mlx_lm"):
+    package_path = Path(get_package_paths(package)[1])
+    for source in package_path.rglob("*.py"):
+        parts = list(source.relative_to(package_path).with_suffix("").parts)
+        if parts[-1] == "__init__":
+            parts.pop()
+        hiddenimports.append(".".join([package, *parts]))
 a = Analysis(
     [str(root / "desktop/backend.py")],
     pathex=[str(root)],
