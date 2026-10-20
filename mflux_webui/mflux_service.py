@@ -1,11 +1,13 @@
 """mflux Python API 适配层。"""
 
 import math
+import re
 import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 
+from .checkpoints import resolve_krea_checkpoint
 from .model_registry import get_model_spec
 
 MODEL_ID = "mflux-community/krea-2-turbo-mflux-q4"
@@ -28,13 +30,47 @@ class GenerationResult:
 class MfluxService:
     """按模型目录中的能力声明调用 mflux Python API。"""
 
-    def __init__(self, images_dir, model_id=MODEL_ID):
+    def __init__(self, images_dir, model_id=MODEL_ID, generation_mode="img2img"):
         self.images_dir = Path(images_dir)
         self.images_dir.mkdir(parents=True, exist_ok=True)
         self.model_id = model_id
+        self.generation_mode = generation_mode
         self.spec = get_model_spec(model_id)
         if not self.spec:
             raise ValueError("暂不支持该模型")
+
+    @property
+    def cache_key(self):
+        return self.model_id + ("::reference" if self.generation_mode == "reference" else "")
+
+    def validate_references(self, count, prompt):
+        if not isinstance(prompt, str):
+            raise ValueError("提示词必须是文字")
+        if self.generation_mode not in ("img2img", "reference"):
+            raise ValueError("不支持的生成方式")
+        if self.generation_mode == "reference":
+            if self.spec.backend != "qwen21":
+                raise ValueError("多参考图编辑目前仅支持 Qwen Image 2.1 Turbo")
+            if not 1 <= count <= 10:
+                raise ValueError("多参考图编辑需要上传 1 到 10 张图片")
+            chinese = dict(zip("一二三四五六七八九", range(1, 10)))
+            chinese["十"] = 10
+
+            def replace(match):
+                value = match.group(1) or match.group(2)
+                number = int(value) if value.isascii() and value.isdigit() else chinese.get(value, 0)
+                if not 1 <= number <= count:
+                    raise ValueError(f"图片引用 {match.group(0)} 超出已上传的 {count} 张图片")
+                return f"<image{number}>"
+
+            return re.sub(r"<image(\d+)>|图([一二三四五六七八九十百零〇\d]+)", replace, prompt)
+        if count > 1:
+            raise ValueError("保持构图模式仅支持一张参考图，请切换多参考图编辑")
+        return prompt
+
+    def validate_generation_dimensions(self, width, height):
+        if self.generation_mode == "reference" and (width % 32 or height % 32):
+            raise ValueError("多参考图编辑的宽度和高度必须是 32 的倍数")
 
     @staticmethod
     def validate_params(width, height, image_strength=None):
@@ -67,6 +103,8 @@ class MfluxService:
             raise ValueError("步数、引导系数和随机种子必须是有效数字") from exc
         if not math.isfinite(step_value) or not step_value.is_integer() or not 1 <= step_value <= 100:
             raise ValueError("步数必须是 1 到 100 之间的整数")
+        if self.generation_mode == "reference" and step_value < 2:
+            raise ValueError("多参考图编辑至少需要 2 步")
         if not math.isfinite(guidance_value) or not 0 <= guidance_value <= 20:
             raise ValueError("引导系数必须在 0 到 20 之间")
         if self.spec.backend == "qwen21" and guidance_value != 1.0:
@@ -88,7 +126,7 @@ class MfluxService:
         from mflux.models.z_image import ZImageTurbo
 
         if self.spec.backend == "krea2":
-            return Krea2(model_config=ModelConfig.krea2(), model_path=self.model_id)
+            return Krea2(model_config=ModelConfig.krea2(), model_path=resolve_krea_checkpoint(self.model_id))
         if self.spec.backend == "zimage":
             return ZImageTurbo(model_path=self.model_id)
         if self.spec.backend == "flux2-4b":
@@ -96,6 +134,11 @@ class MfluxService:
         if self.spec.backend == "flux2-9b":
             return Flux2Klein(model_config=ModelConfig.flux2_klein_9b(), model_path=self.model_id)
         if self.spec.backend == "qwen21":
+            if self.generation_mode == "reference":
+                from mflux.models.qwen21.variants.edit.qwen_image_21_edit import (
+                    QwenImage21Edit,
+                )
+                return QwenImage21Edit(model_config=ModelConfig.qwen_image_21_turbo(), model_path=self.model_id)
             return QwenImage21(model_config=ModelConfig.qwen_image_21_turbo(), model_path=self.model_id)
         raise ValueError("暂不支持该模型")
 
@@ -104,9 +147,12 @@ class MfluxService:
         return self._load_model()
 
     def generate(self, prompt, width, height, seed=None, steps=None, guidance=None,
-                 input_image=None, image_strength=None, model=None):
-        image_strength = image_strength if input_image and image_strength not in (None, "") else None
+                 input_image=None, image_strength=None, model=None, input_images=None):
+        references = list(input_images or ([input_image] if input_image else []))
+        encoded_prompt = self.validate_references(len(references), prompt)
+        image_strength = image_strength if self.generation_mode == "img2img" and input_image and image_strength not in (None, "") else None
         validated = self.validate_params(width, height, image_strength)
+        self.validate_generation_dimensions(validated["width"], validated["height"])
         options = self.validate_options(steps, guidance, seed)
         steps, guidance = options["steps"], options["guidance"]
         seed = options["seed"] if options["seed"] is not None else time.time_ns() % 1_000_000_000
@@ -116,17 +162,20 @@ class MfluxService:
         started_at = time.monotonic()
         try:
             model = model or self.load_model()
-            image = model.generate_image(
+            arguments = dict(
                 seed=seed,
-                prompt=prompt,
+                prompt=encoded_prompt,
                 num_inference_steps=steps,
                 height=validated["height"],
                 width=validated["width"],
                 guidance=guidance,
-                image_path=input_image,
-                image_strength=validated["image_strength"],
                 scheduler=self.spec.scheduler,
             )
+            if self.generation_mode == "reference":
+                arguments.update(image_paths=references, output_resolution=1024)
+            else:
+                arguments.update(image_path=input_image, image_strength=validated["image_strength"])
+            image = model.generate_image(**arguments)
             image.save(output_path)
         except Exception as exc:
             raise RuntimeError(f"mflux 生成失败：{exc}") from exc
@@ -140,5 +189,6 @@ class MfluxService:
             width=validated["width"], height=validated["height"], prompt=prompt,
             metadata={"seed": seed, "steps": steps, "guidance": guidance,
                       "scheduler": self.spec.scheduler,
+                      "generationMode": self.generation_mode, "referenceCount": len(references),
                       "imageStrength": validated["image_strength"] if input_image else None},
         )

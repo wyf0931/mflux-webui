@@ -3,8 +3,11 @@
 使用 Flask、Alpine.js、Tailwind CSS 4 与 daisyUI 5，在 Apple Silicon Mac 上通过 mflux 本地生成图像。
 支持文生图、参考图生图、模型缓存管理、异步队列和历史画廊。
 
+提供 [macOS 桌面版](docs/desktop.md)：使用 Tauri 2，安装后直接打开，无需安装 Python 或 Node.js；首次使用时下载模型。下载见 [GitHub Releases](https://github.com/wyf0931/mflux-webui/releases)。
+
 - **模型**：Qwen Image 2.1 Turbo、Krea 2 Turbo、Z-Image Turbo、FLUX.2 Klein。
 - **参考图**：本地选择或 ⌘V / Ctrl+V 粘贴，自动预览，可替换、移除，生成时上传。
+- **Qwen 多参考图编辑**：高级选项中切换生成方式，按顺序添加 1–10 张图片，通过“图一、图二”或 `<image1>`、`<image2>` 指定引用；原单图保持构图模式继续可用。
 - **参数**：随模型切换默认值；Qwen Turbo 默认 8 步、引导系数固定为 1.0。
 - **队列**：查看状态、模型别名、耗时和结果；失败时通过“查看日志”弹窗查看完整错误。
 - **界面**：基于 daisyUI 的 Rausch 浅色主题与深色扩展，支持系统中文字体和手机布局。
@@ -58,6 +61,7 @@ uv run python app.py
 ## 文档
 
 - [完整使用文档](README.zh-CN.md)：模型渠道、参数、剪贴板、任务队列与数据目录。
+- [macOS 桌面版](docs/desktop.md)：安装、独立数据目录、本机打包、GitHub Actions 与 Release。
 - [主题与组件约定](docs/theme.md)：daisyUI 主题变量、系统字体、组件及交互规范。
 - [Qwen Image 2.1 Turbo 接入与排查](docs/qwen-image-21-turbo.md)：固定依赖、HF 模型与兼容性问题。
 - [项目协作说明](AGENTS.md)：开发命令与代码协作要求。

@@ -48,6 +48,52 @@ test("普通文本粘贴保持默认行为，不影响参考图", () => {
   assert.equal(page.referenceFile, null);
 });
 
+test("Qwen 多图按添加顺序编号，插入引用并在切换单图时释放额外预览", () => {
+  const { page, revoked } = setup();
+  page.models = [{ repoId: "qwen", family: "Qwen Image 2.1 Turbo" }];
+  page.form.modelId = "qwen";
+  page.form.generationMode = "reference";
+  const one = new File(["one"], "one.png", { type: "image/png" });
+  const two = new File(["two"], "two.png", { type: "image/png" });
+  page.chooseImage({ target: { files: [one, two], value: "files" } });
+  assert.equal(page.referenceImages.length, 2);
+  assert.equal(page.referenceImages[1].file, two);
+  page.insertReference(1);
+  assert.match(page.form.prompt, /<image2>/);
+  page.form.generationMode = "img2img";
+  page.changeGenerationMode();
+  assert.equal(page.referenceImages.length, 1);
+  assert.equal(page.referenceFile, one);
+  assert.equal(revoked.length, 1);
+  page.removeReferenceImage();
+  assert.equal(page.referenceImages.length, 0);
+  assert.equal(revoked.length, 2);
+});
+
+test("Qwen 多图上限为 10，移除单张后顺序保持且可继续添加", () => {
+  const { page } = setup();
+  page.models = [{ repoId: "qwen", family: "Qwen Image 2.1 Turbo" }];
+  page.form.modelId = "qwen";
+  page.form.generationMode = "reference";
+  for (let i = 0; i < 11; i++) page.setReferenceImage(new File([String(i)], `${i}.png`, { type: "image/png" }));
+  assert.equal(page.referenceImages.length, 10);
+  assert.match(page.error, /最多/);
+  page.removeReferenceImage(0);
+  assert.equal(page.referenceFile.name, "1.png");
+  page.setReferenceImage(new File(["new"], "new.png", { type: "image/png" }));
+  assert.equal(page.referenceImages.length, 10);
+  assert.equal(page.referenceImages[9].file.name, "new.png");
+});
+
+test("历史多图参数复用恢复编辑模式，并提示按原顺序重新上传", async () => {
+  const models = [{ repoId: "qwen", family: "Qwen Image 2.1 Turbo", steps: 8, guidanceMode: "fixed", guidance: 1, installed: true }];
+  const { page } = setup(models, { modelId: "qwen", prompt: "图一参考图二", generationMode: "reference", hasReference: true });
+  await page.init();
+  assert.equal(page.referenceEditing, true);
+  assert.equal(page.referenceImages.length, 0);
+  assert.match(page.reuseNotice, /原顺序/);
+});
+
 test("不支持的图片类型不会替换已有参考图", () => {
   const { page } = setup();
   const png = new File(["png"], "local.png", { type: "image/png" });

@@ -1,0 +1,8 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "startup",
+  "description": "仅本地启动页面可以读取状态、重试和打开日志目录。",
+  "windows": ["main"],
+  "local": true,
+  "permissions": ["core:default", "allow-desktop-controls"]
+}

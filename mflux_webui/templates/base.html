@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-theme="rausch">
+<html lang="zh-CN" data-theme="{{ desktop_theme|default('rausch') }}" data-desktop="{{ 'true' if desktop_theme is defined else 'false' }}">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><link rel="icon" href="data:,">
     <title>{% block title %}mflux WebUI{% endblock %}</title>
-    <script>try { document.documentElement.dataset.theme = localStorage.getItem('mflux.theme') === 'rausch-dark' ? 'rausch-dark' : 'rausch'; } catch (_) { document.documentElement.dataset.theme = 'rausch'; }</script>
+    <script>if (document.documentElement.dataset.desktop !== 'true') { try { document.documentElement.dataset.theme = localStorage.getItem('mflux.theme') === 'rausch-dark' ? 'rausch-dark' : 'rausch'; } catch (_) { document.documentElement.dataset.theme = 'rausch'; } }</script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
 </head>
 <body x-data="theme" class="bg-base-100 text-base-content">

@@ -17,8 +17,13 @@ CLAUDE.md
 .planning/*
 .playwright-cli/
 node_modules/
+src-tauri/target/
+src-tauri/gen/
 
 # Data files
 data/*.json
 data/images/*.png
 !data/images/.gitkeep
+
+# macOS
+.DS_Store

@@ -3,12 +3,9 @@
 import json
 import os
 from dataclasses import dataclass
-from pathlib import Path
 
-from dotenv import load_dotenv
+from .paths import PROJECT_ROOT
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-load_dotenv(PROJECT_ROOT / ".env")
 MODEL_CONFIG_PATH = PROJECT_ROOT / "config" / "models.json"
 MODEL_SOURCES = ("huggingface", "modelscope")
 VALID_MODEL_REPOS = ("all", *MODEL_SOURCES)
@@ -126,5 +123,7 @@ def catalog_models(installed_ids=(), sources=None):
             "guidance": spec.guidance, "guidanceMode": spec.guidance_mode,
             "scheduler": spec.scheduler,
             "installed": is_installed, "supportsImageToImage": spec.supports_image_to_image,
+            "supportsReferenceEditing": spec.backend == "qwen21",
+            "maxReferenceImages": 10 if spec.backend == "qwen21" else 1,
         })
     return models

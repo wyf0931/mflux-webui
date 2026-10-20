@@ -4,7 +4,6 @@ from pathlib import Path
 from uuid import uuid4
 
 from flask import Blueprint, current_app, jsonify, request
-from werkzeug.utils import secure_filename
 
 from .db import (
     clean_history,
@@ -94,24 +93,32 @@ def generate_image():
         return failure("暂不支持该模型", code=2302)
 
     input_path = None
+    input_paths = []
     try:
-        input_image = request.files.get("image")
-        if input_image and input_image.filename:
-            suffix = Path(secure_filename(input_image.filename)).suffix.lower()
+        mode = data.get("generationMode", "img2img")
+        images = request.files.getlist("images") + request.files.getlist("image")
+        images = [image for image in images if image.filename]
+        service = MfluxService(_images_dir(), model_id=model_id, generation_mode=mode)
+        service.validate_references(len(images), prompt)
+        for input_image in images:
+            # 保存名由 UUID 生成，只提取扩展名；secure_filename 会把全中文 basename 去掉。
+            suffix = Path(input_image.filename).suffix.lower()
             if suffix not in {".png", ".jpg", ".jpeg", ".webp"}:
                 return failure("参考图仅支持 PNG、JPG、JPEG 或 WebP", code=2303)
             uploads_dir = _images_dir().parent / "uploads"
             uploads_dir.mkdir(parents=True, exist_ok=True)
             input_path = uploads_dir / f"{uuid4().hex}{suffix}"
+            input_paths.append(input_path)
             input_image.save(input_path)
 
         validated = MfluxService.validate_params(
             data.get("width", 768), data.get("height", 1024),
-            data.get("imageStrength") if input_path else None,
+            data.get("imageStrength") if input_path and mode == "img2img" else None,
         )
-        options = MfluxService(_images_dir(), model_id=model_id).validate_options(
+        options = service.validate_options(
             data.get("steps"), data.get("guidance"), data.get("seed"),
         )
+        service.validate_generation_dimensions(validated["width"], validated["height"])
         task = _task_manager().submit({
             "model_id": model_id,
             "prompt": prompt,
@@ -121,8 +128,10 @@ def generate_image():
             "steps": options["steps"],
             "guidance": options["guidance"],
             "image_strength": validated["image_strength"],
-        }, input_path=input_path)
+            "generation_mode": mode,
+        }, **({"input_paths": input_paths} if mode == "reference" else {"input_path": input_path}))
         input_path = None
+        input_paths = []
         return success(task, message="任务已加入队列", status=202)
     except QueueFullError as exc:
         return failure(str(exc), code=2305, status=429)
@@ -132,8 +141,8 @@ def generate_image():
         current_app.logger.exception("图片生成失败")
         return failure(f"生成失败：{exc}", code=2500, status=500)
     finally:
-        if input_path and input_path.exists():
-            input_path.unlink()
+        for path in input_paths:
+            path.unlink(missing_ok=True)
 
 
 @api.get("/generate/tasks")

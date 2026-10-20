@@ -45,10 +45,16 @@ class ModelCache:
         self._models = {}
 
     def get(self, service):
-        cached = self._models.get(service.model_id)
+        key = getattr(service, "cache_key", service.model_id)
+        # 同一仓库的文本/视觉编辑实例不能混用，也不同时保留两套权重。
+        other = service.model_id if key != service.model_id else service.model_id + "::reference"
+        if other in self._models:
+            del self._models[other]
+            gc.collect()
+        cached = self._models.get(key)
         if cached is None:
             cached = {"model": service.load_model(), "last_used": self._clock()}
-            self._models[service.model_id] = cached
+            self._models[key] = cached
         return cached["model"]
 
     def mark_used(self, model_id):
@@ -104,7 +110,7 @@ class GenerationTaskManager:
     def _now():
         return datetime.now().astimezone().isoformat(timespec="microseconds")
 
-    def submit(self, params, input_path=None):
+    def submit(self, params, input_path=None, input_paths=None):
         with self._submit_lock:
             pending = self._pending_tasks()
             if len(pending) >= self.queue_max_size:
@@ -124,6 +130,7 @@ class GenerationTaskManager:
                 "duration": None,
                 "metadata": None,
                 "input_path": str(input_path) if input_path else None,
+                "input_paths": [str(path) for path in input_paths or []],
                 "params": params,
             }
             create_generation_task(task)
@@ -181,6 +188,8 @@ class GenerationTaskManager:
             "width": task["params"]["width"],
             "height": task["params"]["height"],
             "steps": task["params"].get("steps"),
+            "generationMode": task["params"].get("generation_mode", "img2img"),
+            "referenceCount": len(task.get("input_paths") or []) or int(bool(task.get("input_path"))),
             "duration": task.get("duration"),
             "filename": task.get("filename"),
             "timestamp": task.get("timestamp"),
@@ -223,16 +232,20 @@ class GenerationTaskManager:
 
         update_generation_task(task_id, {"status": "running", "started_at": self._now()})
         input_path = Path(task["input_path"]) if task.get("input_path") else None
+        input_paths = [Path(path) for path in task.get("input_paths", [])]
         params = task["params"]
         try:
             service = self._service_factory(self.images_dir, model_id=params["model_id"])
+            service.generation_mode = params.get("generation_mode", "img2img")
             model = self.model_cache.get(service)
+            reference_options = {"input_images": input_paths} if service.generation_mode == "reference" else {}
             result = service.generate(
                 prompt=params["prompt"], width=params["width"], height=params["height"],
                 seed=params.get("seed"), steps=params.get("steps"), guidance=params.get("guidance"),
                 input_image=input_path, image_strength=params.get("image_strength"), model=model,
+                **reference_options,
             )
-            self.model_cache.mark_used(service.model_id)
+            self.model_cache.mark_used(getattr(service, "cache_key", service.model_id))
             timestamp = result.filename.removesuffix(".png")
             add_history_entry({
                 "timestamp": timestamp, "model": result.model, "width": result.width,
@@ -253,6 +266,6 @@ class GenerationTaskManager:
                 "logs": task_logs,
             })
         finally:
-            if input_path and input_path.exists():
-                input_path.unlink()
+            for path in [*input_paths, *([input_path] if input_path else [])]:
+                path.unlink(missing_ok=True)
             trim_terminal_generation_tasks()
