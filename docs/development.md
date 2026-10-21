@@ -4,11 +4,11 @@
 
 ## 环境要求
 
-- macOS Apple Silicon
+- macOS Apple Silicon（M1 及以上），支持 MLX
 - Python 3.11 或更高版本，依赖由 [uv](https://docs.astral.sh/uv/) 管理
 - Node.js 20 或更新版本与 npm
 
-首次生成或下载模型可能需要数 GB 磁盘空间，请根据模型大小准备足够的存储和统一内存。
+内存与磁盘档位、各模型的实测峰值内存和耗时见 [推荐配置](../README.zh-CN.md#推荐配置)（中文）或 [Recommended configurations](../README.md#recommended-configurations)（英文），这里不重复列出。开发时同时运行浏览器、IDE 与全量模型库，建议至少 32 GB 统一内存和 60 GB 可用磁盘。
 
 ## 安装与构建
 
