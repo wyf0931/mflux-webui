@@ -4,7 +4,7 @@
 <section x-data="generationPage" @paste.window="pasteImage($event)" class="mx-auto max-w-[1400px]"><header class="mb-4"><h1 class="text-[28px] font-semibold">图像生成</h1></header><div x-show="reuseNotice" x-cloak class="alert alert-info mb-4" x-text="reuseNotice"></div><div class="grid grid-cols-1 gap-8 lg:grid-cols-2">
   <form x-ref="form" @submit.prevent="submit" class="card border border-base-300 bg-base-100 shadow-sm" enctype="multipart/form-data"><div class="card-body gap-6 p-6">
     <label class="grid gap-2"><span class="text-sm font-medium">模型</span><select x-model="form.modelId" @change="changeModel" name="modelId" class="select  mt-2 w-full"><template x-for="model in models" :key="model.repoId"><option :value="model.repoId" x-text="model.name"></option></template><option x-show="!models.length" value="">请先在模型库下载模型</option></select><span class="text-xs mt-2 text-base-content/60" x-text="selectedModel ? `${selectedModel.family} · ${selectedModel.sizeGB.toFixed(1)} GB · 默认 ${selectedModel.steps} 步` : ''"></span></label>
-    <label class="grid gap-2"><span class="flex items-center justify-between gap-2"><span class="text-sm font-medium">提示词</span><button type="button" @click="describeFromReference" :disabled="submitting" class="btn btn-ghost btn-xs">✨ 从参考图生成</button></span><textarea x-model="form.prompt" name="prompt" rows="5" placeholder="描述你想要生成的图像..." required class="textarea  mt-2 w-full"></textarea></label>
+    <label class="grid gap-2"><span class="text-sm font-medium">提示词</span><textarea x-model="form.prompt" name="prompt" rows="5" placeholder="描述你想要生成的图像..." required class="textarea  mt-2 w-full"></textarea></label>
     <div class="grid grid-cols-1 gap-4 md:grid-cols-4"><label class="grid gap-2"><span class="text-sm">比例</span><select x-model="preset" @change="applyPreset" class="select  mt-2 w-full"><template x-for="option in presets" :key="option.id"><option :value="option.id" x-text="option.icon + '  ' + option.ratio"></option></template><option value="custom">⌗  自定义</option></select></label><label class="grid gap-2"><span class="text-sm">宽度</span><input x-model.number="form.width" @input="syncPreset" name="width" type="number" min="256" max="2048" :step="referenceEditing ? 32 : 16" required class="input  mt-2 w-full"></label><label class="grid gap-2"><span class="text-sm">高度</span><input x-model.number="form.height" @input="syncPreset" name="height" type="number" min="256" max="2048" :step="referenceEditing ? 32 : 16" required class="input  mt-2 w-full"></label><label class="grid gap-2"><span class="text-sm">步数</span><input x-model.number="form.steps" name="steps" type="number" :min="referenceEditing ? 2 : 1" max="100" class="input  mt-2 w-full"></label></div>
     <button type="button" @click="showAdvanced = !showAdvanced" class="btn btn-ghost btn-sm w-fit px-0" x-text="showAdvanced ? '收起高级选项' : '显示高级选项'"></button>
     <p class="-mt-4 text-xs text-base-content/60">可在页面直接按 ⌘V / Ctrl+V 粘贴截图或图片，自动添加为参考图。</p>
@@ -22,7 +22,7 @@
         <div class="mt-4 flex flex-wrap gap-2"><button type="button" @click="$refs.image.click()" :disabled="submitting" class="btn btn-sm">选择图片</button><button x-show="canReadClipboard" type="button" @click="readClipboard" :disabled="submitting" class="btn btn-sm">从剪贴板粘贴</button><button x-show="referenceFile" type="button" @click="removeReferenceImage()" :disabled="submitting" class="btn btn-ghost btn-sm">移除参考图</button></div>
         <p class="mt-2 text-xs text-base-content/60">支持 PNG、JPG、WebP；也可直接按 ⌘V / Ctrl+V。</p>
         <p role="status" aria-live="polite" class="mt-2 text-sm text-base-content/70" x-text="imageStatus"></p>
-        <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2"><template x-for="(image, index) in referenceImages" :key="image.preview"><article class="rounded-box border border-base-300 bg-base-100 p-3"><img :src="image.preview" :alt="`图${index + 1}参考图预览`" class="h-32 w-full object-contain"><p class="mt-2 break-all text-xs" x-text="`图${index + 1} · ${image.name}`"></p><div class="mt-2 flex flex-wrap gap-2"><button x-show="referenceEditing" type="button" @click="insertReference(index)" :disabled="submitting" class="btn btn-sm">插入引用</button><button type="button" @click="openDescribe(index)" :disabled="submitting" class="btn btn-sm">AI 描述</button><button type="button" @click="removeReferenceImage(index)" :disabled="submitting" class="btn btn-ghost btn-sm" :aria-label="`移除图${index + 1}`">移除</button></div></article></template></div>
+        <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2"><template x-for="(image, index) in referenceImages" :key="image.preview"><article class="rounded-box border border-base-300 bg-base-100 p-3"><img :src="image.preview" :alt="`图${index + 1}参考图预览`" class="h-32 w-full object-contain"><p class="mt-2 break-all text-xs" x-text="`图${index + 1} · ${image.name}`"></p><div class="mt-2 flex flex-wrap gap-2"><button x-show="referenceEditing" type="button" @click="insertReference(index)" :disabled="submitting" class="btn btn-sm">插入引用</button><button type="button" @click="removeReferenceImage(index)" :disabled="submitting" class="btn btn-ghost btn-sm" :aria-label="`移除图${index + 1}`">移除</button></div></article></template></div>
         <label x-show="referenceFile && !referenceEditing" class="grid gap-2 mt-5"><span class="text-sm">参考图保留强度（0–1）</span><input x-model.number="form.imageStrength" name="imageStrength" :disabled="!referenceFile || referenceEditing" type="number" min="0" max="1" step="0.05" class="input mt-2 w-full"><span class="text-xs mt-2 text-base-content/60">默认 0.35；值越高，保留原图越多、变化越少。这是保留构图的图生图模式。</span></label>
       </div>
     </section>
@@ -31,58 +31,5 @@
   </div></form>
   <section x-show="result" x-cloak class="card border border-base-300 bg-base-100 shadow-sm"><div class="card-body p-0"><div class="flex items-center justify-between border-b border-base-300 px-6 py-5"><h2 class="text-xl font-semibold">生成结果</h2><span class="badge badge-success">完成</span></div><div class="bg-base-200 p-6"><img :src="result ? `/static/images/${result.filename}` : ''" alt="生成结果" class="mx-auto max-h-[600px] max-w-full rounded-box"></div><div class="grid gap-2 p-5 text-sm"><p>文件：<span x-text="result?.filename"></span></p><p>耗时：<span x-text="result ? `${result.duration.toFixed(1)} 秒` : ''"></span></p></div></div></section>
 </div>
-<dialog x-ref="describeDialog" class="modal">
-  <div class="modal-box max-w-3xl">
-    <form method="dialog"><button class="btn btn-sm btn-circle btn-ghost absolute top-4 right-4" aria-label="关闭参考图描述">✕</button></form>
-    <h2 class="text-xl font-semibold">参考图提示词</h2>
-    <p class="mt-1 text-sm text-base-content/60">本地视觉模型分析参考图，生成可直接使用的提示词与结构化描述。</p>
-    <div class="mt-5 grid gap-4 sm:grid-cols-[160px_1fr] sm:items-start">
-      <img x-show="describeImage" x-cloak :src="describeImage?.preview" alt="待分析的参考图" class="h-40 w-full rounded-box border border-base-300 bg-base-200 object-contain">
-      <label class="grid gap-2"><span class="text-sm font-medium">关注点（可选）</span>
-        <input x-model="describeFocus" maxlength="300" :disabled="describing" type="text" placeholder="例如：聚焦人物、服装细节、光线氛围" class="input w-full">
-        <span class="text-xs text-base-content/60">留空则分析整张图；分析通常需要 10 秒左右。</span>
-      </label>
-    </div>
-    <div class="mt-5 flex flex-wrap items-center gap-3">
-      <button type="button" class="btn btn-primary btn-sm" @click="runDescribe" :disabled="describing || !describeImage"><span x-show="describing" class="loading loading-spinner loading-xs"></span><span x-text="describing ? '分析中…' : description ? '重新分析' : '开始分析'"></span></button>
-      <span x-show="description" x-cloak class="text-xs text-base-content/60" x-text="`${description?.model} · ${description?.duration} 秒`"></span>
-    </div>
-    <div x-show="describeError" x-cloak role="alert" class="alert alert-error mt-4 text-sm" x-text="describeError"></div>
-    <div x-show="description" x-cloak class="mt-6">
-      <div role="tablist" class="tabs tabs-border">
-        <button type="button" role="tab" class="tab" :class="{ 'tab-active': describeTab === 'prompt' }" :aria-selected="describeTab === 'prompt'" @click="describeTab = 'prompt'">Prompt</button>
-        <button type="button" role="tab" class="tab" :class="{ 'tab-active': describeTab === 'structure' }" :aria-selected="describeTab === 'structure'" @click="describeTab = 'structure'">结构化</button>
-      </div>
-      <section x-show="describeTab === 'prompt'" class="mt-4 rounded-box border border-base-300 bg-base-200 p-4">
-        <p class="whitespace-pre-wrap text-sm leading-relaxed" x-text="description?.prompt"></p>
-        <div class="mt-3 flex flex-wrap gap-2">
-          <button type="button" class="btn btn-sm" @click="copyDescribe(description?.prompt, 'prompt')" :aria-label="copied === 'prompt' ? '已复制提示词' : '复制提示词'">
-            <svg x-show="copied !== 'prompt'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-            <svg x-show="copied === 'prompt'" x-cloak width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m5 13 4 4L19 7"/></svg>
-            <span x-text="copied === 'prompt' ? '已复制' : '复制'"></span>
-          </button>
-          <button type="button" class="btn btn-ghost btn-sm" @click="applyDescription">填入提示词</button>
-        </div>
-      </section>
-      <section x-show="describeTab === 'structure'" class="mt-4">
-        <div x-show="description?.structure?.length" class="overflow-x-auto rounded-box border border-base-300">
-          <table class="table table-sm">
-            <thead><tr><th class="w-28">维度</th><th>内容</th></tr></thead>
-            <tbody><template x-for="row in description?.structure || []" :key="row.label"><tr><td class="align-top font-medium whitespace-nowrap" x-text="row.label"></td><td class="align-top whitespace-pre-wrap" x-text="row.value"></td></tr></template></tbody>
-          </table>
-        </div>
-        <p x-show="!description?.structure?.length" class="text-sm text-base-content/60">本次结果没有结构化字段，可重新分析或直接使用 Prompt。</p>
-        <div x-show="description?.structure?.length" class="mt-3 flex justify-end">
-          <button type="button" class="btn btn-sm" @click="copyDescribe(structureMarkdown, 'structure')" :aria-label="copied === 'structure' ? '已复制结构化表格' : '复制结构化表格'">
-            <svg x-show="copied !== 'structure'" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-            <svg x-show="copied === 'structure'" x-cloak width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m5 13 4 4L19 7"/></svg>
-            <span x-text="copied === 'structure' ? '已复制' : '复制 Markdown'"></span>
-          </button>
-        </div>
-      </section>
-    </div>
-  </div>
-  <form method="dialog" class="modal-backdrop"><button>关闭</button></form>
-</dialog>
 <div x-show="error" x-cloak role="alert" class="alert alert-error fixed right-6 bottom-6 z-50 w-auto max-w-md shadow-lg" x-text="error"></div></section>
 {% endblock %}

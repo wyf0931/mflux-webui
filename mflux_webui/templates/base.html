@@ -11,7 +11,7 @@
       <div class="navbar mx-auto max-w-[1280px] px-4 md:px-8">
         <div class="navbar-start w-auto flex-1"><a href="/" class="brand" aria-label="mflux WebUI 首页">mflux WebUI</a></div>
         <nav class="navbar-center tabs tabs-border hidden md:flex" aria-label="主导航">
-          {% for endpoint, path, label in [('index', '/', '生图'), ('gallery', '/gallery', '画廊'), ('generation_queue', '/queue', '队列'), ('models', '/models', '模型库')] %}
+          {% for endpoint, path, label in [('index', '/', '生图'), ('describe', '/describe', 'AI 描述'), ('gallery', '/gallery', '画廊'), ('generation_queue', '/queue', '队列'), ('models', '/models', '模型库')] %}
           <a href="{{ path }}" class="tab {% if request.endpoint == endpoint %}tab-active{% endif %}" {% if request.endpoint == endpoint %}aria-current="page"{% endif %}>{{ label }}</a>
           {% endfor %}
         </nav>
@@ -21,7 +21,7 @@
               <svg x-show="current === 'rausch-dark'" x-cloak width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg>
             </button>
             <details class="dropdown dropdown-end md:hidden"><summary class="btn btn-ghost btn-square" aria-label="打开导航菜单"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></summary><ul class="menu dropdown-content z-[1] mt-3 w-44 rounded-box border border-base-300 bg-base-100 p-2 shadow-lg">
-              {% for endpoint, path, label in [('index', '/', '生图'), ('gallery', '/gallery', '画廊'), ('generation_queue', '/queue', '队列'), ('models', '/models', '模型库')] %}
+              {% for endpoint, path, label in [('index', '/', '生图'), ('describe', '/describe', 'AI 描述'), ('gallery', '/gallery', '画廊'), ('generation_queue', '/queue', '队列'), ('models', '/models', '模型库')] %}
               <li><a href="{{ path }}" {% if request.endpoint == endpoint %}aria-current="page"{% endif %}>{{ label }}</a></li>
               {% endfor %}
             </ul></details>

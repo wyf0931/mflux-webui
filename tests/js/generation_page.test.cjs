@@ -3,7 +3,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const vm = require("node:vm");
 
-function setup(models = [], reuse = null, describeResponse = null) {
+function setup(models = [], reuse = null) {
   const factories = {};
   const revoked = [];
   const clipboard = [];
@@ -13,9 +13,7 @@ function setup(models = [], reuse = null, describeResponse = null) {
     window: { setTimeout: () => 0 }, navigator: { clipboard: { writeText: async (text) => clipboard.push(text) } }, File, FormData,
     URL: { createObjectURL: () => `blob:${Math.random()}`, revokeObjectURL: (url) => revoked.push(url) },
     localStorage: { getItem: (key) => stored.get(key), removeItem: (key) => stored.delete(key) },
-    fetch: async (url) => ({ json: async () => (String(url).includes("/api/describe")
-      ? describeResponse || { code: 0, data: null }
-      : { code: 0, data: models }) }),
+    fetch: async (url) => ({ json: async () => ({ code: 0, data: models }) }),
   };
   const source = fs.readFileSync("mflux_webui/static/js/main.js", "utf8").replace('import Alpine from "alpinejs";', "");
   vm.runInNewContext(source, context);
@@ -137,63 +135,4 @@ test("日志弹窗按需读取完整堆栈，关闭后忽略迟到的响应", as
   queue.logTask = null;
   await request;
   assert.equal(queue.logText, "另一个摘要");
-});
-
-test("参考图描述生成 prompt 与结构化 Markdown，并可复制和填入", async () => {
-  const description = {
-    model: "local-vlm", duration: 9.9, prompt: "A | woman, soft light.",
-    structure: [
-      { label: "构图与布局", value: "居中\n构图" },
-      { label: "光线与曝光", value: "柔和侧光" },
-    ],
-  };
-  const { page, clipboard } = setup([], null, { code: 0, data: description });
-  page.setReferenceImage(new File(["png"], "ref.png", { type: "image/png" }));
-  let dialogsOpen = 0;
-  page.$refs = { ...page.$refs, describeDialog: { showModal() { dialogsOpen++; }, close() { dialogsOpen--; } } };
-  page.openDescribe(0);
-  assert.equal(dialogsOpen, 1);
-  assert.equal(page.describeImage.name, "ref.png");
-  await page.runDescribe();
-  assert.equal(page.description.prompt, description.prompt);
-  assert.equal(page.describeTab, "prompt");
-  assert.equal(page.structureMarkdown, "| 维度 | 内容 |\n| --- | --- |\n| 构图与布局 | 居中 构图 |\n| 光线与曝光 | 柔和侧光 |");
-  await page.copyDescribe(page.structureMarkdown, "structure");
-  assert.equal(clipboard[0], page.structureMarkdown);
-  assert.equal(page.copied, "structure");
-  page.applyDescription();
-  assert.equal(page.form.prompt, description.prompt);
-  assert.equal(dialogsOpen, 0);
-});
-
-test("参考图描述失败时展示错误并清空旧结果", async () => {
-  const { page } = setup([], null, { code: 2306, message: "本地未找到视觉模型" });
-  page.setReferenceImage(new File(["png"], "ref.png", { type: "image/png" }));
-  page.$refs = { ...page.$refs, describeDialog: { showModal() {}, close() {} } };
-  page.openDescribe(0);
-  page.description = { prompt: "旧结果", structure: [] };
-  await page.runDescribe();
-  assert.equal(page.description, null);
-  assert.match(page.describeError, /本地未找到视觉模型/);
-});
-
-test("提示词旁入口直接选择参考图并打开描述弹窗", () => {
-  const { page } = setup();
-  let picked = 0;
-  let opened = 0;
-  page.$refs = {
-    image: { value: "", click() { picked++; } },
-    describeDialog: { showModal() { opened++; }, close() {} },
-  };
-  page.describeFromReference();
-  assert.equal(picked, 1);
-  assert.equal(page.describeAutoOpen, true);
-  page.chooseImage({ target: { files: [new File(["png"], "ref.png", { type: "image/png" })], value: "files" } });
-  assert.equal(opened, 1);
-  assert.equal(page.describeIndex, 0);
-  assert.equal(page.showAdvanced, true);
-  assert.equal(page.describeAutoOpen, false);
-  page.describeFromReference();
-  assert.equal(picked, 1);
-  assert.equal(opened, 2);
 });

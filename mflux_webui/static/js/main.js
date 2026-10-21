@@ -21,7 +21,7 @@ const formatDuration = (value) => {
 };
 const copyToClipboard = async (text) => {
   try { await navigator.clipboard.writeText(text); }
-  catch (_error) {
+  catch {
     const area = document.createElement("textarea");
     area.value = text; document.body.append(area); area.select(); document.execCommand("copy"); area.remove();
   }
@@ -35,7 +35,7 @@ Alpine.data("theme", () => ({
   toggle() {
     this.current = this.current === "rausch-dark" ? "rausch" : "rausch-dark";
     document.documentElement.dataset.theme = this.current;
-    try { localStorage.setItem("mflux.theme", this.current); } catch (_error) { /* 存储受限时仍允许切换。 */ }
+    try { localStorage.setItem("mflux.theme", this.current); } catch { /* 存储受限时仍允许切换。 */ }
     if (document.documentElement.dataset.desktop === "true") {
       apiClient.post("/desktop/theme", { theme: this.current }).catch((error) => console.error("主题保存失败", error));
     }
@@ -43,7 +43,7 @@ Alpine.data("theme", () => ({
 }));
 
 Alpine.data("generationPage", () => ({
-  models: [], result: null, error: "", submitting: false, task: null, pollTimer: null, showAdvanced: false, imageName: "", referenceFile: null, imagePreview: "", referenceImages: [], imageStatus: "", elapsedSeconds: 0, elapsedTimer: null, reuseNotice: "", describeIndex: null, describeAutoOpen: false, describeFocus: "", describing: false, describeError: "", description: null, describeTab: "prompt", copied: "",
+  models: [], result: null, error: "", submitting: false, task: null, pollTimer: null, showAdvanced: false, imageName: "", referenceFile: null, imagePreview: "", referenceImages: [], imageStatus: "", elapsedSeconds: 0, elapsedTimer: null, reuseNotice: "",
   form: { modelId: "", prompt: "", width: 768, height: 1376, steps: 8, guidance: "", seed: "", imageStrength: 0.35, generationMode: "img2img" },
   preset: "portrait-9-16",
   presets: [
@@ -61,13 +61,6 @@ Alpine.data("generationPage", () => ({
   get selectedPreset() { return this.presets.find((preset) => preset.id === this.preset); },
   get isQwenTurbo() { return this.selectedModel?.family === "Qwen Image 2.1 Turbo"; },
   get referenceEditing() { return this.isQwenTurbo && this.form.generationMode === "reference"; },
-  get describeImage() { return this.describeIndex === null ? null : this.referenceImages[this.describeIndex] || null; },
-  get structureMarkdown() {
-    const rows = this.description?.structure || [];
-    if (!rows.length) return "";
-    const cell = (value) => String(value).replace(/\|/g, "\\|").replace(/\s*\n\s*/g, " ");
-    return ["| 维度 | 内容 |", "| --- | --- |", ...rows.map((row) => `| ${cell(row.label)} | ${cell(row.value)} |`)].join("\n");
-  },
   get guidanceEditable() { return this.selectedModel?.guidanceMode === "editable"; },
   get guidanceHint() {
     if (this.isQwenTurbo) return "Turbo 无需 CFG，引导系数固定为 1.0。";
@@ -117,7 +110,7 @@ Alpine.data("generationPage", () => ({
       this.showAdvanced = Boolean(this.form.guidance || this.form.seed || params.hasReference);
       this.syncPreset();
       if (params.hasReference) this.reuseNotice = this.referenceEditing ? "已恢复多参考图参数，请按原顺序重新添加参考图。" : "已恢复参数，请重新选择或粘贴参考图。";
-    } catch (_error) {
+    } catch {
       this.reuseNotice = "历史参数读取失败，请手动填写生成参数。";
     }
   },
@@ -140,18 +133,8 @@ Alpine.data("generationPage", () => ({
     this.showAdvanced = true; this.error = "";
   },
   chooseImage(event) {
-    const start = this.referenceImages.length;
     Array.from(event.target.files || []).forEach((file) => this.setReferenceImage(file));
     event.target.value = "";
-    const autoOpen = this.describeAutoOpen;
-    this.describeAutoOpen = false;
-    if (autoOpen && this.referenceImages.length > start) { this.showAdvanced = true; this.openDescribe(start); }
-  },
-  describeFromReference() {
-    if (this.submitting) return;
-    if (this.referenceImages.length) { this.showAdvanced = true; this.openDescribe(0); return; }
-    this.describeAutoOpen = true;
-    this.$refs.image.click();
   },
   pasteImage(event) {
     if (this.submitting) return;
@@ -167,42 +150,13 @@ Alpine.data("generationPage", () => ({
         if (type) { this.setReferenceImage(await item.getType(type), true); return; }
       }
       this.error = "剪贴板中没有可用图片，请先复制图片或截图。";
-    } catch (_error) { this.error = "无法读取剪贴板，请直接按 ⌘V 或 Ctrl+V 粘贴图片。"; }
+    } catch { this.error = "无法读取剪贴板，请直接按 ⌘V 或 Ctrl+V 粘贴图片。"; }
   },
   removeReferenceImage(index = null) {
     const removed = index === null ? this.referenceImages.splice(0) : this.referenceImages.splice(index, 1);
     removed.forEach((image) => URL.revokeObjectURL(image.preview));
     this.syncReferences();
     this.imageStatus = "已移除参考图。"; this.$refs.image.value = "";
-  },
-  openDescribe(index) {
-    this.describeIndex = index; this.describeFocus = ""; this.description = null;
-    this.describeError = ""; this.describeTab = "prompt"; this.copied = "";
-    this.$refs.describeDialog?.showModal();
-  },
-  async runDescribe() {
-    const image = this.describeImage;
-    if (!image || this.describing) return;
-    this.describing = true; this.describeError = ""; this.description = null; this.copied = "";
-    try {
-      const body = new FormData();
-      body.append("image", image.file, image.file.name);
-      body.append("focus", this.describeFocus);
-      this.description = await apiClient.request("/api/describe", { method: "POST", body });
-      this.describeTab = "prompt";
-    } catch (error) { this.describeError = error.message; }
-    finally { this.describing = false; }
-  },
-  applyDescription() {
-    if (!this.description?.prompt) return;
-    this.form.prompt = this.description.prompt;
-    this.$refs.describeDialog?.close();
-  },
-  async copyDescribe(text, key) {
-    if (!text) return;
-    await copyToClipboard(text);
-    this.copied = key;
-    window.setTimeout(() => { if (this.copied === key) this.copied = ""; }, 1500);
   },
   startElapsed() { this.elapsedSeconds = 0; this.elapsedTimer = window.setInterval(() => { this.elapsedSeconds += 1; }, 1000); },
   stopElapsed() { if (this.elapsedTimer) window.clearInterval(this.elapsedTimer); this.elapsedTimer = null; },
@@ -246,6 +200,118 @@ Alpine.data("generationPage", () => ({
   },
 }));
 
+Alpine.data("describePage", () => ({
+  image: null, focus: "", dragging: false, describing: false, error: "", description: null, copied: "",
+  elapsedSeconds: 0, elapsedTimer: null, vlm: { modelId: "", cached: true },
+  focusPresets: ["聚焦人物", "服装细节", "光线氛围", "色彩搭配"],
+  async init() {
+    try { this.vlm = { ...this.vlm, ...(await apiClient.get("/api/describe/model")) }; }
+    catch {
+      // 旧版后端没有该接口时不影响描述功能。
+    }
+  },
+  destroy() { this.stopTimer(); this.releasePreview(); },
+  get canReadClipboard() { return Boolean(navigator.clipboard?.read); },
+  get vlmLabel() {
+    if (!this.vlm.modelId) return "本地视觉模型";
+    if (this.vlm.cached === false) return "视觉模型未下载";
+    return this.vlm.modelId.split("/").pop();
+  },
+  get imageSizeLabel() {
+    if (!this.image) return "";
+    const size = this.image.file.size;
+    return size >= 1024 * 1024 ? `${(size / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(size / 1024))} KB`;
+  },
+  get describeLabel() {
+    if (this.describing) return `分析中… ${this.elapsedLabel}`;
+    return this.description ? "重新描述" : "开始描述 ✨";
+  },
+  get elapsedLabel() { return this.elapsedSeconds ? `${this.elapsedSeconds} 秒` : "即将完成"; },
+  get metaLabel() {
+    if (!this.description) return "";
+    return `${this.description.model} · 耗时 ${this.description.duration} 秒`;
+  },
+  get structureMarkdown() {
+    const rows = this.description?.structure || [];
+    if (!rows.length) return "";
+    const cell = (value) => String(value).replace(/\|/g, "\\|").replace(/\s*\n\s*/g, " ");
+    return ["| 维度 | 内容 |", "| --- | --- |", ...rows.map((row) => `| ${cell(row.label)} | ${cell(row.value)} |`)].join("\n");
+  },
+  releasePreview() { if (this.image?.preview) URL.revokeObjectURL(this.image.preview); },
+  setImage(file, pasted = false) {
+    if (!file || this.describing) return;
+    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+      this.error = "仅支持 PNG、JPG、WebP 图片。";
+      return;
+    }
+    const extension = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" }[file.type];
+    const normalized = pasted ? new File([file], `clipboard-${Date.now()}.${extension}`, { type: file.type }) : file;
+    this.releasePreview();
+    this.image = { file: normalized, name: pasted ? "剪贴板图片" : normalized.name, preview: URL.createObjectURL(normalized) };
+    this.description = null; this.copied = ""; this.error = "";
+  },
+  chooseImage(event) {
+    const file = Array.from(event.target.files || [])[0];
+    event.target.value = "";
+    this.setImage(file);
+  },
+  dropImage(event) {
+    this.dragging = false;
+    const file = Array.from(event.dataTransfer?.files || []).find((item) => item.type.startsWith("image/"));
+    if (file) this.setImage(file);
+    else this.error = "拖入的内容不是图片，请选择 PNG、JPG 或 WebP 文件。";
+  },
+  pasteImage(event) {
+    const item = Array.from(event.clipboardData?.items || []).find((entry) => entry.kind === "file" && entry.type.startsWith("image/"));
+    if (!item || this.describing) return;
+    event.preventDefault();
+    this.setImage(item.getAsFile(), true);
+  },
+  async readClipboard() {
+    try {
+      const items = await navigator.clipboard.read();
+      for (const item of items) {
+        const type = item.types.find((value) => ["image/png", "image/jpeg", "image/webp"].includes(value));
+        if (type) { this.setImage(await item.getType(type), true); return; }
+      }
+      this.error = "剪贴板中没有可用图片，请先复制图片或截图。";
+    } catch { this.error = "无法读取剪贴板，请直接按 ⌘V 或 Ctrl+V 粘贴图片。"; }
+  },
+  removeImage() {
+    if (this.describing) return;
+    this.releasePreview();
+    this.image = null; this.description = null; this.copied = ""; this.error = "";
+  },
+  applyFocus(text) { this.focus = this.focus === text ? "" : text; },
+  startTimer() { this.stopTimer(); this.elapsedSeconds = 0; this.elapsedTimer = window.setInterval(() => { this.elapsedSeconds += 1; }, 1000); },
+  stopTimer() { if (this.elapsedTimer) window.clearInterval(this.elapsedTimer); this.elapsedTimer = null; },
+  async runDescribe() {
+    if (!this.image || this.describing) return;
+    this.describing = true; this.error = ""; this.copied = "";
+    this.startTimer();
+    try {
+      const body = new FormData();
+      body.append("image", this.image.file, this.image.file.name);
+      body.append("focus", this.focus.trim());
+      this.description = await apiClient.request("/api/describe", { method: "POST", body });
+    } catch (error) {
+      this.description = null;
+      this.error = error.message;
+    } finally { this.describing = false; this.stopTimer(); }
+  },
+  async copy(text, key) {
+    if (!text) return;
+    await copyToClipboard(text);
+    this.copied = key;
+    window.setTimeout(() => { if (this.copied === key) this.copied = ""; }, 1500);
+  },
+  useInGenerate() {
+    if (!this.description?.prompt) return;
+    localStorage.setItem("mflux.reuseGeneration", JSON.stringify({ prompt: this.description.prompt }));
+    window.location.assign("/");
+  },
+}));
+
 Alpine.data("modelLibrary", () => ({
   catalog: [], cached: [], tasks: [], error: "", timer: null, activeSource: "huggingface", loading: true,
   get availableSources() { return [...new Set(this.catalog.map((model) => model.source))]; },
@@ -284,7 +350,7 @@ Alpine.data("galleryPage", () => ({
       imageStrength: metadata.imageStrength, generationMode: metadata.generationMode,
       hasReference: Boolean(metadata.referenceCount) || (metadata.imageStrength !== null && metadata.imageStrength !== undefined),
     }));
-    window.location.href = "/";
+    window.location.assign("/");
   },
   async remove(timestamp) { if (!confirm("确定要删除这张图片吗？此操作无法撤销。")) return; try { await apiClient.delete(`/api/history/${timestamp}`); this.images = this.images.filter((image) => image.timestamp !== timestamp); } catch (error) { this.error = error.message; } },
   async copy(prompt) { await copyToClipboard(prompt); },

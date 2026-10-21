@@ -168,6 +168,13 @@ def generate_image():
             path.unlink(missing_ok=True)
 
 
+@api.get("/describe/model")
+def describe_model():
+    """返回视觉模型信息，供 AI 描述页提示是否已下载权重。"""
+    service = _vlm_service()
+    return success({"modelId": service.model_id, "cached": service.is_model_cached()})
+
+
 @api.post("/describe")
 def describe_reference():
     """分析参考图，返回一句提示词与结构化维度。"""
