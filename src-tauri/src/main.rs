@@ -59,6 +59,61 @@ fn desktop_open_logs(
         .map_err(|error| error.to_string())
 }
 
+fn free_space_message(path: &std::path::Path) -> String {
+    let output = Command::new("df").arg("-Pk").arg(path).output();
+    let Ok(output) = output else {
+        return String::new();
+    };
+    let text = String::from_utf8_lossy(&output.stdout);
+    let available_kb = text
+        .lines()
+        .nth(1)
+        .and_then(|line| line.split_whitespace().nth(3))
+        .and_then(|value| value.parse::<u64>().ok());
+    match available_kb {
+        Some(kb) => format!("磁盘剩余空间 {:.1} GB。", kb as f64 / 1024.0 / 1024.0),
+        None => String::new(),
+    }
+}
+
+/// 返回后端日志末尾若干行，用于在启动失败时给出真实原因而不是只说“退出”。
+fn log_tail(path: &std::path::Path, lines: usize) -> String {
+    let Ok(content) = fs::read_to_string(path) else {
+        return String::new();
+    };
+    let cleaned = content.replace('\r', "\n");
+    let mut tail: Vec<&str> = cleaned
+        .lines()
+        .filter(|line| !line.trim().is_empty() && !line.contains("it/s"))
+        .rev()
+        .take(lines)
+        .collect();
+    tail.reverse();
+    tail.join("\n")
+}
+
+fn failure_message(state: &DesktopState, reason: &str) -> String {
+    let log_path = state.log_dir.join("backend.log");
+    let tail = log_tail(&log_path, 6);
+    let mut message = format!("本地服务启动失败：{reason}");
+    let disk_full = tail.contains("No usable temporary directory")
+        || tail.contains("No space left on device")
+        || tail.contains("Errno 28");
+    if disk_full {
+        message.push_str("\n\n磁盘空间已耗尽：");
+        message.push_str(&free_space_message(&state.data_dir));
+        message.push_str("请清理磁盘（模型缓存约占用数十 GB）后重试。");
+    } else if tail.contains("Address already in use") {
+        message.push_str("\n\n端口被占用，请退出其他 mflux WebUI 实例后重试。");
+    }
+    if !tail.is_empty() {
+        message.push_str("\n\n日志末尾：\n");
+        message.push_str(&tail);
+    }
+    message.push_str("\n\n完整日志可在“打开日志目录”中查看。");
+    message
+}
+
 fn backend_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     #[cfg(debug_assertions)]
     {
@@ -125,11 +180,8 @@ fn start_backend(app: &tauri::AppHandle) {
     let app = app.clone();
     std::thread::spawn(move || {
         if let Err(error) = launch_and_monitor(&app, attempt) {
-            fail(
-                &app,
-                attempt,
-                format!("本地服务启动失败：{error}。可以重试或打开日志目录。"),
-            );
+            let state = app.state::<DesktopState>();
+            fail(&app, attempt, failure_message(&state, &error));
         }
     });
 }
@@ -147,9 +199,17 @@ fn launch_and_monitor(app: &tauri::AppHandle, attempt: u64) -> Result<(), String
         .append(true)
         .open(&log_path)
         .map_err(|error| error.to_string())?;
+    // 冻结后的后端在导入阶段就会创建临时文件；把临时目录固定到应用数据目录，
+    // 避免系统临时目录被清理或不可写时整个后端启动失败。
+    let temp_dir = state.data_dir.join("tmp");
+    let matplotlib_dir = state.data_dir.join("matplotlib");
+    fs::create_dir_all(&temp_dir).map_err(|error| error.to_string())?;
+    fs::create_dir_all(&matplotlib_dir).map_err(|error| error.to_string())?;
     let mut child = Command::new(backend_path(app)?)
         .current_dir(&state.data_dir)
         .env("PYTHONUNBUFFERED", "1")
+        .env("TMPDIR", &temp_dir)
+        .env("MPLCONFIGDIR", &matplotlib_dir)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(stderr)

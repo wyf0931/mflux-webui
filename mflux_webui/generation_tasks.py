@@ -20,6 +20,7 @@ from .db import (
     trim_terminal_generation_tasks,
     update_generation_task,
 )
+from .disk_space import check_generation_space
 from .mflux_service import MfluxService
 from .model_registry import get_model_spec
 
@@ -236,6 +237,8 @@ class GenerationTaskManager:
         input_paths = [Path(path) for path in task.get("input_paths", [])]
         params = dict(task["params"])
         try:
+            # 入队后可能又写入了其他文件，开始推理前再确认一次剩余空间。
+            check_generation_space(self.images_dir)
             service = self._service_factory(self.images_dir, model_id=params["model_id"])
             service.generation_mode = params.get("generation_mode", "img2img")
             model = self.model_cache.get(service)
