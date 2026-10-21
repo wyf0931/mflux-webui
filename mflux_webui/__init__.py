@@ -52,6 +52,10 @@ def create_app():
     def gallery():
         return render_template("gallery.html")
 
+    @app.get("/describe")
+    def describe():
+        return render_template("describe.html")
+
     @app.get("/models")
     def models():
         return render_template("models.html")

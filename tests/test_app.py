@@ -175,11 +175,32 @@ class ApiTest(unittest.TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.get_json()["code"], 2306)
 
-    def test_generation_page_exposes_reference_description(self):
+    def test_generation_page_no_longer_embeds_description(self):
         response = self.client.get("/")
         self.assertEqual(response.status_code, 200)
-        self.assertIn("参考图提示词".encode(), response.data)
-        self.assertIn("AI 描述".encode(), response.data)
+        # 描述功能已拆分为独立页面，生图页不再保留弹窗与入口按钮。
+        self.assertNotIn(b"describeDialog", response.data)
+        self.assertNotIn("从参考图生成", response.data.decode())
+        self.assertNotIn("openDescribe", response.data.decode())
+
+    def test_describe_page_renders_standalone_workflow(self):
+        response = self.client.get("/describe")
+        self.assertEqual(response.status_code, 200)
+        html = response.data
+        for text in ("AI 描述", "把图片拖到这里", "开始描述", "结构化维度", "去生图"):
+            self.assertIn(text, html.decode())
+
+    def test_describe_model_endpoint_reports_cache_state(self):
+        class Service:
+            model_id = "example/vlm"
+
+            def is_model_cached(self):
+                return False
+
+        self.app.extensions["vlm_service"] = Service()
+        response = self.client.get("/api/describe/model")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()["data"], {"modelId": "example/vlm", "cached": False})
 
     def test_formatters(self):
         self.assertEqual(self.app.jinja_env.filters["timestamp"]("2026-03-30-16-24-59"), "2026-03-30 16:24:59")
