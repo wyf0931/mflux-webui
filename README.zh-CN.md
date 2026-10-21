@@ -11,7 +11,7 @@
 - **模型**：Qwen Image 2.1 Turbo、Krea 2 Turbo、Z-Image Turbo、FLUX.2 Klein，提供 q4 / q8 / 4-bit 量化版本。
 - **参考图**：本地选择或 ⌘V / Ctrl+V 粘贴，自动预览，可替换或移除，生成时才上传。
 - **Qwen 多参考图编辑**：切换生成方式后按顺序添加 1–10 张图片，用“图一”“图二”或 `<image1>`、`<image2>` 指定引用；原单图保持构图模式继续可用。
-- **AI 描述页**：导航中的独立页面，用本地 Qwen3-VL 把任意图片转成一句提示词与七项结构化维度，支持复制或一键带进生图页。
+- **图生文**：导航中的独立页面，用本地 Qwen3-VL 把任意图片转成一句提示词与七项结构化维度，支持复制或一键带进生图页。
 - **按模型适配参数**：步数与引导系数跟随所选模型；Qwen Turbo 默认 8 步、引导系数固定为 1.0。
 - **队列**：展示状态、模型别名、耗时与结果，失败时通过日志弹窗查看完整堆栈。
 - **界面**：daisyUI 的 Rausch 浅色主题与深色扩展，中文字体回退与手机布局。
@@ -71,7 +71,7 @@ uv run python app.py
 
 打开 <http://127.0.0.1:8090>，在「模型库」下载模型后即可生成。`uv sync` 会把 mflux 固定到包含 Qwen Image 2.1 Turbo 支持的上游提交，请勿另行安装全局 mflux。
 
-后台运行使用 `./ops.sh start|stop|status|logs`，详见 [开发与运维](docs/development.md)。
+后台运行使用 `./ops.sh start|stop|status|logs`，打包 macOS 桌面版使用 `./ops.sh build`，详见 [开发与运维](docs/development.md)。
 
 ## 依赖与许可证
 
@@ -122,7 +122,7 @@ uv run python app.py
 | [文档索引](docs/README.md) | 全部文档的分类导航 |
 | [使用指南](docs/usage.md) | 文生图、图生图、Qwen 多参考图编辑、队列与任务日志 |
 | [模型与配置](docs/configuration.md) | 模型目录、下载渠道、环境变量、数据位置 |
-| [AI 描述](docs/image-description.md) | 独立描述页的使用流程、前置条件、输出结构与接口 |
+| [图生文](docs/image-description.md) | 独立图生文页的使用流程、前置条件、输出结构与接口 |
 | [macOS 桌面版](docs/desktop.md) | 安装、独立数据目录、本机打包、GitHub Actions 与 Release |
 | [开发与运维](docs/development.md) | 安装、构建、后台运行、自动化检查、项目结构 |
 | [主题与组件约定](docs/theme.md) | daisyUI 主题变量、系统字体、组件与交互规范 |

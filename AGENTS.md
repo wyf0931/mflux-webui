@@ -11,7 +11,7 @@
 - 前端回归：`node --test tests/js/*.test.cjs`
 - 前台启动：`uv run python app.py`
 - macOS 桌面开发：`uv sync --locked --group desktop && npm ci && npm run desktop:dev`
-- macOS 桌面打包：`npm run desktop:build`，说明见 `docs/desktop.md`
+- macOS 桌面打包：`./ops.sh build`（清理 → 回归 → 打包 → 自检 → 汇总到 `dist/desktop`），参数与环境说明见 `docs/desktop.md`；只清理缓存用 `./ops.sh clean [--deep] [--dry-run]`
 - 后台运维：`./ops.sh start|stop|status|restart`
 - 日志与监控：`./ops.sh logs [行数]`、`./ops.sh status --watch`
 - 自动化检查优先使用 `npm run build`、`uv run python -m unittest discover -s tests`、`uv lock --check` 和 Python 编译。
