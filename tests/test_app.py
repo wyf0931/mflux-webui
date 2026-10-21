@@ -46,6 +46,10 @@ class ApiTest(unittest.TestCase):
         self.app = create_app()
         self.app.config.update(TESTING=True, IMAGES_DIR=str(self.images_dir))
         self.client = self.app.test_client()
+        # 生成前的空间检查依赖机器实际磁盘，测试统一模拟为充足空间。
+        patcher = patch("mflux_webui.disk_space.free_bytes", return_value=1024**4)
+        patcher.start()
+        self.addCleanup(patcher.stop)
 
     def tearDown(self):
         self.temp_dir.cleanup()

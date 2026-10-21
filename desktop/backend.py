@@ -14,6 +14,30 @@ if not getattr(sys, "frozen", False):
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 
+def prepare_private_temp_dirs(data_dir):
+    """把临时目录放进应用数据目录，避免系统临时目录不可用时后端启动失败。"""
+    logger = logging.getLogger(__name__)
+    for name, env_name in (("tmp", "TMPDIR"), ("matplotlib", "MPLCONFIGDIR")):
+        directory = Path(data_dir) / name
+        try:
+            directory.mkdir(parents=True, exist_ok=True)
+            os.environ[env_name] = str(directory)
+        except OSError as error:
+            logger.warning("无法创建 %s，继续使用系统临时目录：%s", directory, error)
+
+
+def log_free_space(data_dir):
+    """启动时记录剩余磁盘空间，便于排查磁盘写满导致的异常退出。"""
+    from mflux_webui.disk_space import GENERATION_MIN_FREE_BYTES, free_bytes, format_size
+
+    available = free_bytes(data_dir)
+    logger = logging.getLogger(__name__)
+    (logger.warning if available < GENERATION_MIN_FREE_BYTES else logger.info)(
+        "数据目录剩余磁盘空间：%s（生成至少需要 %s）",
+        format_size(available), format_size(GENERATION_MIN_FREE_BYTES),
+    )
+
+
 def protect_desktop_app(app, token, port, data_dir=None):
     """仅允许经过启动握手的本机会话访问桌面服务。"""
     from flask import abort, request
@@ -138,6 +162,8 @@ def main():
     logging.basicConfig(level=logging.INFO, stream=sys.stderr)
     # 避免把启动 URL 中的会话令牌写入访问日志。
     logging.getLogger("werkzeug").setLevel(logging.ERROR)
+    prepare_private_temp_dirs(data_dir)
+    log_free_space(data_dir)
 
     from werkzeug.serving import make_server
 

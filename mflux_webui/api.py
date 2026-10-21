@@ -11,6 +11,7 @@ from .db import (
     get_all_history,
     get_history_by_timestamp,
 )
+from .disk_space import InsufficientSpaceError, check_generation_space
 from .generation_tasks import QueueFullError
 from .mflux_service import MODEL_ID, MfluxService
 from .model_cache import get_cached_models
@@ -87,6 +88,8 @@ def start_model_download():
     source = data.get("source", "huggingface")
     try:
         return success(download_manager.start(repo_id, source=source), message="下载任务已创建", status=202)
+    except InsufficientSpaceError as exc:
+        return failure(str(exc), code=2601, status=507)
     except ValueError as exc:
         return failure(str(exc), code=2201)
 
@@ -136,6 +139,7 @@ def generate_image():
             data.get("steps"), data.get("guidance"), data.get("seed"),
         )
         service.validate_generation_dimensions(validated["width"], validated["height"])
+        check_generation_space(_images_dir())
         task = _task_manager().submit({
             "model_id": model_id,
             "prompt": prompt,
@@ -152,6 +156,8 @@ def generate_image():
         return success(task, message="任务已加入队列", status=202)
     except QueueFullError as exc:
         return failure(str(exc), code=2305, status=429)
+    except InsufficientSpaceError as exc:
+        return failure(str(exc), code=2600, status=507)
     except ValueError as exc:
         return failure(str(exc), code=2304)
     except Exception as exc:
