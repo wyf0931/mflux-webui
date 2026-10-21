@@ -187,7 +187,7 @@ class ApiTest(unittest.TestCase):
         response = self.client.get("/describe")
         self.assertEqual(response.status_code, 200)
         html = response.data
-        for text in ("AI 描述", "把图片拖到这里", "开始描述", "结构化维度", "去生图"):
+        for text in ("图生文", "把图片拖到这里", "开始描述", "结构化维度", "去生图"):
             self.assertIn(text, html.decode())
 
     def test_describe_model_endpoint_reports_cache_state(self):

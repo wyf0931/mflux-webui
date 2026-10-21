@@ -63,7 +63,36 @@ npm ci
 npm run desktop:dev
 ```
 
-构建安装包：
+构建安装包（推荐一键脚本）：
+
+```bash
+./ops.sh build
+```
+
+`build` 会依次执行：清理旧产物与打包缓存 → `uv lock --check` → Python 与前端回归 → 同步桌面依赖 → `npm run desktop:build` → 安装包内置后端自检 → 收集到 `dist/desktop/`（含 `SHA256SUMS.txt`）。
+
+常用参数：
+
+| 参数 | 作用 |
+| --- | --- |
+| `--deep` | 先删除 `build/desktop-env` 与 `src-tauri/target`，从零重建（最慢，但能排除缓存影响） |
+| `--no-clean` | 跳过打包前清理，直接复用缓存 |
+| `--skip-tests` | 跳过 lock 校验与回归测试 |
+| `--skip-smoke` | 跳过安装包内置后端自检 |
+
+只想腾出空间、不做打包时用 `./ops.sh clean`，它默认清理以下内容，可用 `--dry-run` 先看清单：
+
+| 路径 | 内容 |
+| --- | --- |
+| `build/desktop` | PyInstaller 目录式后端与打包用前端资源 |
+| `build/pyinstaller`、`build/pyinstaller-cache` | PyInstaller 工作目录与配置缓存 |
+| `build/matplotlib-cache` | 打包时的绘图库缓存 |
+| `src-tauri/target/*/release/bundle` | 上一次的 `.app` 与 `.dmg` |
+| `dist/desktop` | 本地收集的安装包与校验值 |
+
+`clean --deep` 还会删除 `build/desktop-env`（uv 构建环境）与 `src-tauri/target`（Rust 依赖缓存），下次打包需要重新下载与编译。日常迭代保留这两项可以把打包时间从数分钟降到几十秒。
+
+直接使用 npm 的等价流程：
 
 ```bash
 npm run desktop:build

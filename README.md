@@ -11,7 +11,7 @@ Text-to-image, reference-image editing, Qwen multi-reference editing, model cach
 - **Models**: Qwen Image 2.1 Turbo, Krea 2 Turbo, Z-Image Turbo, FLUX.2 Klein, in q4 / q8 / 4-bit quantizations.
 - **Reference images**: pick a file or paste with ⌘V / Ctrl+V, preview, replace or remove; uploaded only when you generate.
 - **Qwen multi-reference editing**: switch generation mode, add 1–10 images in order, and refer to them as "image one"/"figure 2" or `<image1>` / `<image2>`. The original single-image composition mode still works.
-- **AI Describe page**: a standalone page (nav entry **AI Describe**) where a local Qwen3-VL model turns any image into a one-line prompt plus seven structured dimensions, with copy and one-click handoff to the generate page.
+- **Image-to-Text page (图生文)**: a standalone page where a local Qwen3-VL model turns any image into a one-line prompt plus seven structured dimensions, with copy and one-click handoff to the generate page.
 - **Per-model defaults**: steps and guidance follow the selected model; Qwen Turbo runs 8 steps with guidance fixed at 1.0.
 - **Queue**: status, model alias, elapsed time and results, with a log dialog showing full failure stacks.
 - **UI**: daisyUI Rausch light theme with a dark variant, Chinese font fallbacks, mobile layout.
@@ -71,7 +71,7 @@ uv run python app.py
 
 Open <http://127.0.0.1:8090>, download a model from the Models page, then generate. `uv sync` pins mflux to the commit that adds Qwen Image 2.1 Turbo support, so do not install a global mflux on the side.
 
-For background operation use `./ops.sh start|stop|status|logs`; see [Development and operations](docs/development.md).
+For background operation use `./ops.sh start|stop|status|logs`, and build the desktop app with `./ops.sh build`; see [Development and operations](docs/development.md).
 
 ## Dependencies and licenses
 
@@ -122,7 +122,7 @@ Notes:
 | [Docs index](docs/README.md) | Navigation for all documents (Chinese) |
 | [Usage guide](docs/usage.md) | Text-to-image, image-to-image, Qwen multi-reference editing, queue and logs |
 | [Models and configuration](docs/configuration.md) | Model catalog, download channels, environment variables, data locations |
-| [AI Describe](docs/image-description.md) | Standalone describe page, local Qwen3-VL setup, output structure and API |
+| [Image-to-Text (图生文)](docs/image-description.md) | Standalone image-to-text page, local Qwen3-VL setup, output structure and API |
 | [macOS desktop app](docs/desktop.md) | Install, separate data directory, local build, GitHub Actions and releases |
 | [Development and operations](docs/development.md) | Install, build, background runs, automated checks, project layout |
 | [Theme and components](docs/theme.md) | daisyUI theme tokens, system fonts, component conventions |

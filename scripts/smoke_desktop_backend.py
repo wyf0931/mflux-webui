@@ -52,7 +52,7 @@ def main():
             cookies = http.cookiejar.CookieJar()
             client = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(cookies))
             client.open(f"{origin}/desktop/bootstrap?token={token}", timeout=10).read()
-            for route in ("/", "/models", "/gallery", "/queue", "/static/css/app.css", "/static/js/app.js",
+            for route in ("/", "/describe", "/models", "/gallery", "/queue", "/static/css/app.css", "/static/js/app.js",
                           "/api/models/cache", "/api/models/catalog", "/api/generate/tasks", "/api/history"):
                 try:
                     response = client.open(origin + route, timeout=15)
