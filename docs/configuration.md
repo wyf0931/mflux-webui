@@ -8,16 +8,16 @@
 
 当前包含的模型：
 
-| 模型 | 量化 | 大小 | 默认步数 | 引导系数 |
-| --- | --- | --- | --- | --- |
-| Qwen Image 2.1 Turbo | q4 | 约 10.0 GB | 8 | 1.0（固定） |
-| Krea 2 Turbo | q4 | 约 14.7 GB | 8 | 1.0 |
-| Krea 2 Turbo | q8 | 约 20.7 GB | 8 | 1.0 |
-| Z-Image Turbo | 4-bit | 约 5.5 GB | 4 | 不使用 |
-| FLUX.2 Klein 4B | 4-bit | 约 4.3 GB | 4 | 1.0 |
-| FLUX.2 Klein 9B | q4 | 约 8.9 GB | 4 | 1.0 |
+| 模型 | 量化 | 大小 | 默认步数 | 引导系数 | 1024×1024 峰值内存 |
+| --- | --- | --- | --- | --- | --- |
+| Qwen Image 2.1 Turbo | q4 | 约 10.0 GB | 8 | 1.0（固定） | 20.5 GB（实测） |
+| Krea 2 Turbo | q4 | 约 14.7 GB | 8 | 1.0 | 31.3 GB（实测） |
+| Krea 2 Turbo | q8 | 约 20.7 GB | 8 | 1.0 | 约 42 GB（估算） |
+| Z-Image Turbo | 4-bit | 约 5.5 GB | 4 | 不使用 | 约 12 GB（估算） |
+| FLUX.2 Klein 4B | 4-bit | 约 4.3 GB | 4 | 1.0 | 约 10 GB（估算） |
+| FLUX.2 Klein 9B | q4 | 约 8.9 GB | 4 | 1.0 | 约 19 GB（估算） |
 
-下载使用 `huggingface_hub` 与 `modelscope` 自己管理的默认缓存目录，应用不会搬运或覆盖缓存文件。预留磁盘空间时按模型大小并考虑统一内存占用。
+实测值来自 Apple M4 Pro / 48 GB 统一内存、8 步采样；估算按权重体积的约 2.1 倍推算，512×512 时可减半。机器推荐档位见 [README 的推荐配置](../README.md#推荐配置)。下载使用 `huggingface_hub` 与 `modelscope` 自己管理的默认缓存目录，应用不会搬运或覆盖缓存文件。
 
 ## 下载渠道
 
