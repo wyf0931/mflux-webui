@@ -53,7 +53,7 @@
 | --- | --- | --- |
 | 顶部导航 | 标签栏（`site-header`，80px） | 隐藏，改用左侧边栏 |
 | 导航形态 | 顶部 tab + 手机端下拉菜单 | 188px source list 侧边栏，条目 30px，选中态为 11% 文字色底色 + 主色图标 |
-| 页面标题 | 正文内 `28px` 的 `h1` | 上提到 52px 工具栏，13px 半粗体；正文标记 `data-page-heading` 的 `h1` 隐藏，其余 `h1` 收敛到 15px |
+| 页面标题 | 正文内 `28px` 的 `h1` | 工具栏固定显示应用名 `MFlux-GUI`（13px 半粗体，不随栏目变化）；正文标记 `data-page-heading` 的 `h1` 隐藏，其余 `h1` 收敛到 15px，当前栏目由侧边栏选中态表示 |
 | 标题栏 | 浏览器标签 | 与系统标题栏合并：`titleBarStyle: Overlay` + `hiddenTitle`，交通灯位于 (18, 19)，工具栏左侧留 86px |
 | 窗口拖动 | — | 工具栏与标题文字标记 `data-tauri-drag-region` |
 | 滚动 | 页面整体滚动 | `body` 固定 100vh 且 `overflow: hidden`，只有 `main` 滚动 |

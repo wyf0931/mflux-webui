@@ -13,8 +13,6 @@
   ('generation_queue', '/queue', '队列', 'queue'),
   ('models', '/models', '模型库', 'models'),
 ] %}
-{% set nav_title = namespace(label='') %}
-{% for endpoint, path, label, icon in nav_items %}{% if request.endpoint == endpoint %}{% set nav_title.label = label %}{% endif %}{% endfor %}
 <body x-data="theme" class="bg-base-100 text-base-content">
     <svg class="sr-only" aria-hidden="true" focusable="false"><defs>
       <symbol id="icon-generate" viewBox="0 0 24 24"><path d="M11.4 3.3l1.6 4 4 1.6-4 1.6-1.6 4-1.6-4-4-1.6 4-1.6z"/><path d="M18.4 14.6l.85 2.1 2.1.85-2.1.85-.85 2.1-.85-2.1-2.1-.85 2.1-.85z"/></symbol>
@@ -26,7 +24,7 @@
 
     {# 桌面版：与系统标题栏合并的紧凑工具栏，左侧为交通灯留白，可拖动窗口。 #}
     <header class="app-toolbar" data-tauri-drag-region>
-      <span class="app-toolbar-title" data-tauri-drag-region>{{ nav_title.label }}</span>
+      <span class="app-toolbar-title" data-tauri-drag-region>MFlux-GUI</span>
       <div class="app-toolbar-actions">
         <button @click="toggle" class="btn btn-ghost btn-sm app-toolbar-button" :aria-label="current === 'rausch-dark' ? '切换至浅色主题' : '切换至深色主题'" aria-label="切换至深色主题">
           <svg x-show="current !== 'rausch-dark'" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M20.9 13.3A9 9 0 0 1 10.7 3.1a9 9 0 1 0 10.2 10.2Z"/></svg>
