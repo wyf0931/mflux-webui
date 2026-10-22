@@ -1,0 +1,6 @@
+{# 复用的小图标按钮，避免各页面的刷新按钮风格漂移。 #}
+{% macro refresh_button(action, label) -%}
+<button type="button" @click="{{ action }}" class="btn btn-ghost btn-square btn-sm" aria-label="{{ label }}" title="{{ label }}">
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0 2 5"/><path d="M20 4v7h-7"/></svg>
+</button>
+{%- endmacro %}

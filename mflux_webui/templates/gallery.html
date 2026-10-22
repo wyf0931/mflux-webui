@@ -2,7 +2,7 @@
 {% block title %}画廊 - mflux WebUI{% endblock %}
 {% block content %}
 <section x-data="galleryPage" class="mx-auto max-w-[1400px]">
-  <header class="mb-8"><h1 class="text-[28px] font-semibold" data-page-heading>画廊</h1><p class="mt-2 text-sm text-base-content/60">查看、筛选与复用生成的图像。</p></header><div class="mb-8 flex flex-wrap items-center gap-3"><span class="text-sm text-base-content/60">按模型筛选：</span><template x-for="model in models" :key="model"><button @click="selected = model" class="btn btn-sm btn-ghost gallery-filter cursor-pointer" :aria-pressed="selected === model" x-text="label(model)"></button></template></div>
+  <header class="mb-8"><h1 class="text-[28px] font-semibold" data-page-heading>画廊</h1></header><div class="mb-8 flex flex-wrap items-center gap-3"><span class="text-sm text-base-content/60">按模型筛选：</span><template x-for="model in models" :key="model"><button @click="selected = model" class="btn btn-sm btn-ghost gallery-filter cursor-pointer" :aria-pressed="selected === model" x-text="label(model)"></button></template></div>
   <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
     <template x-for="image in filteredImages" :key="image.timestamp">
       <article class="card gallery-card overflow-hidden border border-base-300 bg-base-100 shadow-sm">
