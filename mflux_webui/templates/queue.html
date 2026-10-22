@@ -11,13 +11,13 @@
         <thead class="bg-base-200"><tr><th>提交时间</th><th>状态</th><th>提示词</th><th>模型与参数</th><th>耗时</th><th>结果</th></tr></thead>
         <tbody>
           <template x-for="task in tasks" :key="task.taskId">
-            <tr>
+            <tr class="cursor-pointer hover:bg-base-200/60" tabindex="0" @click="openDetail(task)" @keydown.enter.prevent="openDetail(task)">
               <td class="text-sm tabular-nums" x-text="formatDateTime(task.createdAt)"></td>
               <td><span class="badge" :class="statusClass(task.status)" x-text="statusLabel(task.status)"></span></td>
-              <td class="text-sm"><p class="whitespace-pre-wrap break-words" x-text="task.prompt"></p></td>
+              <td class="text-sm"><p class="line-clamp-2 break-words" :title="task.prompt" x-text="task.prompt"></p></td>
               <td class="text-sm"><p class="break-words font-medium" :title="task.modelId" x-text="task.modelName || task.modelId"></p><p class="mt-1 text-base-content/60" x-text="`${task.width}×${task.height} · ${task.steps || '默认'} 步`"></p></td>
               <td class="text-sm"><template x-if="task.status === 'pending'"><span x-text="`第 ${task.position} 个 · ${etaLabel(task.etaSeconds)}`"></span></template><template x-if="task.status === 'running'"><span>正在使用 GPU</span></template><template x-if="['succeeded', 'failed'].includes(task.status)"><span x-text="task.duration ? formatDuration(task.duration) : '—'"></span></template></td>
-              <td class="text-sm"><a x-show="task.filename" :href="`/static/images/${task.filename}`" target="_blank" rel="noopener" class="btn btn-link btn-sm px-0 whitespace-nowrap">查看图片</a><button x-show="task.status === 'failed'" type="button" @click="openLogs(task)" class="btn btn-link btn-sm px-0 whitespace-nowrap">查看日志</button></td>
+              <td class="text-sm"><a x-show="task.filename" :href="`/static/images/${task.filename}`" target="_blank" rel="noopener" @click.stop class="btn btn-link btn-sm px-0 whitespace-nowrap">查看图片</a><button x-show="task.status === 'failed'" type="button" @click.stop="openLogs(task)" class="btn btn-link btn-sm px-0 whitespace-nowrap">查看日志</button></td>
             </tr>
           </template>
           <tr x-show="!tasks.length"><td colspan="6" class="py-12 text-center text-base-content/60">暂无生成任务</td></tr>
@@ -25,6 +25,36 @@
       </table>
     </div>
   </div>
+  <dialog x-ref="detailDialog" @close="detailTask = null" class="modal" aria-labelledby="task-detail-title">
+    <div class="modal-box w-[calc(100%-2rem)] max-w-2xl border border-base-300 bg-base-100 p-6">
+      <h2 id="task-detail-title" class="text-xl font-semibold">任务详情</h2>
+      <p class="mt-1 break-all text-xs text-base-content/60" x-text="detailTask?.taskId"></p>
+      <dl class="mt-5 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+        <div><dt class="text-xs text-base-content/60">状态</dt><dd class="mt-1"><span class="badge" :class="statusClass(detailTask?.status)" x-text="statusLabel(detailTask?.status)"></span></dd></div>
+        <div><dt class="text-xs text-base-content/60">提交时间</dt><dd class="mt-1 text-sm tabular-nums" x-text="formatDateTime(detailTask?.createdAt)"></dd></div>
+        <div><dt class="text-xs text-base-content/60">模型</dt><dd class="mt-1 break-words text-sm" x-text="detailTask?.modelName || detailTask?.modelId"></dd></div>
+        <div><dt class="text-xs text-base-content/60">耗时</dt><dd class="mt-1 text-sm" x-text="detailTask?.duration ? formatDuration(detailTask.duration) : '—'"></dd></div>
+        <div><dt class="text-xs text-base-content/60">尺寸</dt><dd class="mt-1 text-sm" x-text="detailTask ? `${detailTask.width}×${detailTask.height}` : ''"></dd></div>
+        <div><dt class="text-xs text-base-content/60">步数 · 引导 · 种子</dt><dd class="mt-1 text-sm" x-text="paramSummary"></dd></div>
+        <div><dt class="text-xs text-base-content/60">生成方式</dt><dd class="mt-1 text-sm" x-text="modeLabel"></dd></div>
+        <div><dt class="text-xs text-base-content/60">参考图</dt><dd class="mt-1 text-sm" x-text="detailTask?.referenceCount ? `${detailTask.referenceCount} 张` : '无'"></dd></div>
+      </dl>
+      <div class="mt-5">
+        <p class="text-xs text-base-content/60">提示词</p>
+        <p class="mt-1 max-h-48 overflow-y-auto whitespace-pre-wrap break-words rounded-field border border-base-300 bg-base-200 p-3 text-sm leading-relaxed" x-text="detailTask?.prompt"></p>
+      </div>
+      <div x-show="detailTask?.error" x-cloak class="mt-4">
+        <p class="text-xs text-base-content/60">失败原因</p>
+        <p class="mt-1 break-words text-sm text-error" x-text="detailTask?.error"></p>
+      </div>
+      <div class="modal-action">
+        <a x-show="detailTask?.filename" x-cloak :href="`/static/images/${detailTask?.filename}`" target="_blank" rel="noopener" class="btn btn-sm">查看图片</a>
+        <button x-show="detailTask?.status === 'failed'" x-cloak type="button" class="btn btn-sm" @click="openLogs(detailTask)">查看完整日志</button>
+        <form method="dialog"><button class="btn btn-sm">关闭</button></form>
+      </div>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button aria-label="关闭任务详情">关闭</button></form>
+  </dialog>
   <dialog x-ref="logDialog" @close="logTask = null" class="modal" aria-labelledby="task-log-title">
     <div class="modal-box w-[calc(100%-2rem)] max-w-3xl border border-base-300 bg-base-100 p-6">
       <h2 id="task-log-title" class="text-xl font-semibold">生成任务日志</h2>

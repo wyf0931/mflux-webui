@@ -17,7 +17,7 @@ class ModelRegistryTest(unittest.TestCase):
         with patch.dict(os.environ, {"MODEL_REPO": "modelscope"}):
             models = catalog_models()
             self.assertEqual(configured_sources(), ("modelscope",))
-        self.assertEqual(len(models), 5)
+        self.assertEqual(len(models), 4)
         self.assertTrue(all(model["source"] == "modelscope" for model in models))
 
     def test_invalid_repository_value_falls_back_to_all(self):

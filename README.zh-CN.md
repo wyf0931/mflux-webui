@@ -8,7 +8,7 @@
 
 ## 功能亮点
 
-- **模型**：Qwen Image 2.1 Turbo、Krea 2 Turbo、Z-Image Turbo、FLUX.2 Klein，提供 q4 / q8 / 4-bit 量化版本。
+- **模型**：Qwen Image 2.1 Turbo、Krea 2 Turbo、Z-Image Turbo、FLUX.2 Klein，提供 q4 与 4-bit 量化版本。
 - **参考图**：本地选择或 ⌘V / Ctrl+V 粘贴，自动预览，可替换或移除，生成时才上传。
 - **Qwen 多参考图编辑**：切换生成方式后按顺序添加 1–10 张图片，用“图一”“图二”或 `<image1>`、`<image2>` 指定引用；原单图保持构图模式继续可用。
 - **图生文**：导航中的独立页面，用本地 Qwen3-VL 把任意图片转成一句提示词与七项结构化维度，支持复制或一键带进生图页。
@@ -42,7 +42,7 @@
 | 最低 | M1/M2，16 GB 统一内存 | 30 GB | FLUX.2 Klein 4B · 4-bit 在 1024×1024（峰值约 10 GB）；Z-Image Turbo 4-bit 在 768×768 |
 | 推荐 | M2 Pro / M3 / M4，32 GB | 60 GB | Qwen Image 2.1 Turbo · q4 在 1024×1024（峰值约 20 GB）、FLUX.2 Klein 9B · q4 在 1024×1024 |
 | 舒适 | M4 Pro 及以上，48 GB | 120 GB | Krea 2 Turbo · q4 在 1024×1024（峰值约 31 GB），并可同时使用参考图提示词分析 |
-| 重度 | M4 Max 及以上，64 GB | 200 GB | Krea 2 Turbo · q8 在 1024×1024 或更大尺寸（峰值约 42 GB）、大尺寸多参考图编辑 |
+| 重度 | M4 Max 及以上，64 GB | 200 GB | Krea 2 Turbo · q4 在 1024×1024 的同时保持图生文视觉模型常驻（约 31 GB + 约 6 GB）、大尺寸多参考图编辑 |
 
 磁盘预算：推荐模型单个 4.3–20.7 GB（六个模型合计约 64 GB），可选的 Qwen3-VL 8B 4-bit 权重 5.8 GB，Python 环境约 3 GB。
 

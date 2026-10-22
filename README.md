@@ -8,7 +8,7 @@ Text-to-image, reference-image editing, Qwen multi-reference editing, model cach
 
 ## Features
 
-- **Models**: Qwen Image 2.1 Turbo, Krea 2 Turbo, Z-Image Turbo, FLUX.2 Klein, in q4 / q8 / 4-bit quantizations.
+- **Models**: Qwen Image 2.1 Turbo, Krea 2 Turbo, Z-Image Turbo, FLUX.2 Klein, in q4 and 4-bit quantizations.
 - **Reference images**: pick a file or paste with ⌘V / Ctrl+V, preview, replace or remove; uploaded only when you generate.
 - **Qwen multi-reference editing**: switch generation mode, add 1–10 images in order, and refer to them as "image one"/"figure 2" or `<image1>` / `<image2>`. The original single-image composition mode still works.
 - **Image-to-Text page (图生文)**: a standalone page where a local Qwen3-VL model turns any image into a one-line prompt plus seven structured dimensions, with copy and one-click handoff to the generate page.
@@ -42,7 +42,7 @@ Unified memory is the real constraint: MLX holds the full weights plus activatio
 | Minimum | M1/M2, 16 GB unified memory | 30 GB | FLUX.2 Klein 4B · 4-bit at 1024×1024 (peak ≈ 10 GB); Z-Image Turbo 4-bit at 768×768 |
 | Recommended | M2 Pro / M3 / M4, 32 GB | 60 GB | Qwen Image 2.1 Turbo · q4 at 1024×1024 (peak ≈ 20 GB), FLUX.2 Klein 9B · q4 at 1024×1024 |
 | Comfortable | M4 Pro or better, 48 GB | 120 GB | Krea 2 Turbo · q4 at 1024×1024 (peak ≈ 31 GB), reference prompt analysis in the same session |
-| Heavy | M4 Max or better, 64 GB | 200 GB | Krea 2 Turbo · q8 at 1024×1024 or larger (peak ≈ 42 GB), multi-reference editing on large canvases |
+| Heavy | M4 Max or better, 64 GB | 200 GB | Krea 2 Turbo · q4 at 1024×1024 together with the image-to-text model resident (≈ 31 GB + ≈ 6 GB), multi-reference editing on large canvases |
 
 Disk budget: the recommended model set is 4.3–20.7 GB per model (about 64 GB for all six), the optional Qwen3-VL 8B 4-bit weights are 5.8 GB, and the Python environment adds roughly 3 GB.
 

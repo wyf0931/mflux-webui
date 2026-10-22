@@ -12,7 +12,6 @@
 | --- | --- | --- | --- | --- | --- |
 | Qwen Image 2.1 Turbo | q4 | 约 10.0 GB | 8 | 1.0（固定） | 20.5 GB（实测） |
 | Krea 2 Turbo | q4 | 约 14.7 GB | 8 | 1.0 | 31.3 GB（实测） |
-| Krea 2 Turbo | q8 | 约 20.7 GB | 8 | 1.0 | 约 42 GB（估算） |
 | Z-Image Turbo | 4-bit | 约 5.5 GB | 4 | 不使用 | 约 12 GB（估算） |
 | FLUX.2 Klein 4B | 4-bit | 约 4.3 GB | 4 | 1.0 | 约 10 GB（估算） |
 | FLUX.2 Klein 9B | q4 | 约 8.9 GB | 4 | 1.0 | 约 19 GB（估算） |

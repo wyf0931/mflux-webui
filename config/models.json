@@ -1,34 +1,68 @@
 {
   "models": [
     {
-      "key": "qwen-image-21-turbo-q4", "name": "Qwen Image 2.1 Turbo · q4", "family": "Qwen Image 2.1 Turbo", "backend": "qwen21",
-      "sizeGB": 10.0, "steps": 8, "guidance": 1.0, "scheduler": "linear", "supportsImageToImage": true,
+      "key": "qwen-image-21-turbo-q4",
+      "name": "Qwen Image 2.1 Turbo · q4",
+      "family": "Qwen Image 2.1 Turbo",
+      "backend": "qwen21",
+      "sizeGB": 10.0,
+      "steps": 8,
+      "guidance": 1.0,
+      "scheduler": "linear",
+      "supportsImageToImage": true,
       "huggingface": "mflux-community/qwen-image-2-1-turbo-mflux-q4"
     },
     {
-      "key": "krea-2-turbo-q4", "name": "Krea 2 Turbo · q4", "family": "Krea 2 Turbo", "backend": "krea2",
-      "sizeGB": 14.7, "steps": 8, "guidance": 1.0, "scheduler": "er_sde", "supportsImageToImage": true,
-      "huggingface": "mflux-community/krea-2-turbo-mflux-q4", "modelscope": "krea/Krea-2-Turbo"
+      "key": "krea-2-turbo-q4",
+      "name": "Krea 2 Turbo · q4",
+      "family": "Krea 2 Turbo",
+      "backend": "krea2",
+      "sizeGB": 14.7,
+      "steps": 8,
+      "guidance": 1.0,
+      "scheduler": "er_sde",
+      "supportsImageToImage": true,
+      "huggingface": "mflux-community/krea-2-turbo-mflux-q4",
+      "modelscope": "krea/Krea-2-Turbo"
     },
     {
-      "key": "krea-2-turbo-q8", "name": "Krea 2 Turbo · q8", "family": "Krea 2 Turbo", "backend": "krea2",
-      "sizeGB": 20.7, "steps": 8, "guidance": 1.0, "scheduler": "er_sde", "supportsImageToImage": true,
-      "huggingface": "mflux-community/krea-2-turbo-mflux-q8", "modelscope": "krea/Krea-2-Turbo"
+      "key": "z-image-turbo-4bit",
+      "name": "Z-Image Turbo · 4-bit",
+      "family": "Z-Image Turbo",
+      "backend": "zimage",
+      "sizeGB": 5.5,
+      "steps": 4,
+      "guidance": null,
+      "scheduler": null,
+      "supportsImageToImage": true,
+      "huggingface": "OsaurusAI/Z-Image-Turbo-mflux-4bit",
+      "modelscope": "Tongyi-MAI/Z-Image-Turbo"
     },
     {
-      "key": "z-image-turbo-4bit", "name": "Z-Image Turbo · 4-bit", "family": "Z-Image Turbo", "backend": "zimage",
-      "sizeGB": 5.5, "steps": 4, "guidance": null, "scheduler": null, "supportsImageToImage": true,
-      "huggingface": "OsaurusAI/Z-Image-Turbo-mflux-4bit", "modelscope": "Tongyi-MAI/Z-Image-Turbo"
+      "key": "flux-2-klein-4b-4bit",
+      "name": "FLUX.2 Klein 4B · 4-bit",
+      "family": "FLUX.2 Klein 4B",
+      "backend": "flux2-4b",
+      "sizeGB": 4.3,
+      "steps": 4,
+      "guidance": 1.0,
+      "scheduler": "flow_match_euler_discrete",
+      "supportsImageToImage": true,
+      "huggingface": "Runpod/FLUX.2-klein-4B-mflux-4bit",
+      "modelscope": "black-forest-labs/FLUX.2-klein-4B"
     },
     {
-      "key": "flux-2-klein-4b-4bit", "name": "FLUX.2 Klein 4B · 4-bit", "family": "FLUX.2 Klein 4B", "backend": "flux2-4b",
-      "sizeGB": 4.3, "steps": 4, "guidance": 1.0, "scheduler": "flow_match_euler_discrete", "supportsImageToImage": true,
-      "huggingface": "Runpod/FLUX.2-klein-4B-mflux-4bit", "modelscope": "black-forest-labs/FLUX.2-klein-4B"
-    },
-    {
-      "key": "flux-2-klein-9b-q4", "name": "FLUX.2 Klein 9B · q4", "family": "FLUX.2 Klein 9B", "backend": "flux2-9b",
-      "sizeGB": 8.9, "steps": 4, "guidance": 1.0, "scheduler": "flow_match_euler_discrete", "supportsImageToImage": true,
-      "huggingface": "mflux-community/flux2-klein-9b-mflux-q4", "modelscope": "black-forest-labs/FLUX.2-klein-9B"
+      "key": "flux-2-klein-9b-q4",
+      "name": "FLUX.2 Klein 9B · q4",
+      "family": "FLUX.2 Klein 9B",
+      "backend": "flux2-9b",
+      "sizeGB": 8.9,
+      "steps": 4,
+      "guidance": 1.0,
+      "scheduler": "flow_match_euler_discrete",
+      "supportsImageToImage": true,
+      "huggingface": "mflux-community/flux2-klein-9b-mflux-q4",
+      "modelscope": "black-forest-labs/FLUX.2-klein-9B"
     }
   ]
 }

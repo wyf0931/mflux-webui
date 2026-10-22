@@ -364,7 +364,27 @@ Alpine.data("galleryPage", () => ({
 }));
 
 Alpine.data("queuePage", () => ({
-  tasks: [], queueLength: 0, runningTaskId: null, error: "", timer: null, logTask: null, logText: "",
+  tasks: [], queueLength: 0, runningTaskId: null, error: "", timer: null, logTask: null, logText: "", detailTask: null,
+  get paramSummary() {
+    const task = this.detailTask;
+    if (!task) return "";
+    const parts = [`${task.steps || "默认"} 步`];
+    const guidance = task.metadata?.guidance;
+    const seed = task.metadata?.seed;
+    if (guidance !== null && guidance !== undefined && guidance !== "") parts.push(`引导 ${guidance}`);
+    if (seed !== null && seed !== undefined && seed !== "") parts.push(`种子 ${seed}`);
+    return parts.join(" · ");
+  },
+  get modeLabel() {
+    const task = this.detailTask;
+    if (!task) return "";
+    if (task.generationMode === "reference") return "多参考图编辑";
+    return task.referenceCount ? "保持构图（单图）" : "文生图";
+  },
+  openDetail(task) {
+    this.detailTask = task;
+    this.$refs.detailDialog?.showModal();
+  },
   async init() { await this.load(); },
   destroy() { if (this.timer) window.clearInterval(this.timer); },
   async load() {
