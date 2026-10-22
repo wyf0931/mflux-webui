@@ -5,14 +5,9 @@
          @dragover.prevent="dragging = true" @dragenter.prevent="dragging = true"
          @dragleave.prevent="dragging = false" @drop.prevent="dropImage($event)"
          class="mx-auto max-w-[1400px]">
-  <header class="mb-6 flex flex-wrap items-end justify-between gap-3">
-    <div>
-      <h1 class="text-[28px] font-semibold" data-page-heading>图生文</h1>
-      <p class="mt-1 max-w-2xl text-sm text-base-content/60">用本地 Qwen3-VL 把一张图片变成可直接使用的提示词与结构化维度。图片只在本机推理，不会上传到任何服务器。</p>
-    </div>
-    <div class="flex flex-wrap items-center gap-2">
-      <span class="badge badge-ghost badge-sm" x-text="vlmLabel"></span>
-    </div>
+  <header class="describe-header mb-6 flex flex-wrap items-center justify-between gap-3">
+    <h1 class="text-[28px] font-semibold" data-page-heading>图生文</h1>
+    <span class="badge badge-ghost badge-sm" x-text="vlmLabel"></span>
   </header>
   <div x-show="vlm.cached === false" x-cloak role="alert" class="alert alert-warning mb-6 flex-wrap text-sm">
     <span>本地未找到视觉模型权重，图生文需要先下载（约 5.8 GB）：</span>

@@ -255,6 +255,12 @@
   overscroll-behavior: contain;
 }
 
+/* 图生文页在桌面版没有页面标题，模型徽章改为右对齐并收紧间距。 */
+[data-desktop="true"] .describe-header {
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
 /* 页面级大标题已上提到工具栏，正文里隐藏；其余标题收敛为区块标题尺寸。 */
 [data-desktop="true"] main [data-page-heading] {
   display: none;
