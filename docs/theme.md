@@ -45,9 +45,29 @@
 - 队列结果的“查看图片”与“查看日志”统一使用 `btn btn-link btn-sm` 文字按钮，不添加边框。
 - 日志使用 daisyUI `modal` 与原生 `<dialog>`，完整内容放入可滚动、可换行的 `pre`。
 
+## 桌面窗口布局（macOS）
+
+桌面版通过 `<html data-desktop="true">` 与 Web 版区分，同一份模板在两处渲染：
+
+| 项目 | Web 版 | 桌面版 |
+| --- | --- | --- |
+| 顶部导航 | 标签栏（`site-header`，80px） | 隐藏，改用左侧边栏 |
+| 导航形态 | 顶部 tab + 手机端下拉菜单 | 188px source list 侧边栏，条目 30px，选中态为 11% 文字色底色 + 主色图标 |
+| 页面标题 | 正文内 `28px` 的 `h1` | 上提到 52px 工具栏，13px 半粗体；正文标记 `data-page-heading` 的 `h1` 隐藏，其余 `h1` 收敛到 15px |
+| 标题栏 | 浏览器标签 | 与系统标题栏合并：`titleBarStyle: Overlay` + `hiddenTitle`，交通灯位于 (18, 19)，工具栏左侧留 86px |
+| 窗口拖动 | — | 工具栏与标题文字标记 `data-tauri-drag-region` |
+| 滚动 | 页面整体滚动 | `body` 固定 100vh 且 `overflow: hidden`，只有 `main` 滚动 |
+| 滚动条 | 浏览器默认 | 11px overlay 样式：透明轨道、3px 透明边框 + `content-box` 缩进拇指 |
+
+窗口默认 1200×820，最小 960×640（侧边栏占 188px）。新增页面时：
+
+- 页面级标题继续用 `<h1 class="text-[28px] font-semibold" data-page-heading>`，桌面版会自动隐藏并在工具栏显示导航名称；导航名称来自 `base.html` 的 `nav_items`。
+- 不要把内容高度写成固定值，交给 `main` 滚动；横向溢出用页面内部容器包裹（表格加 `overflow-x-auto`），不要撑开窗口。
+- 桌面专属样式统一写成 `[data-desktop="true"]` 前缀并放在 `@layer` 之外，确保能覆盖 Tailwind 工具类。
+
 ## 修改与验证
 
 调整主题优先修改 daisyUI 变量；只有变量不能表达的品牌与交互样式才添加组件级覆盖。
 组件级覆盖位于 Tailwind 的 `utilities` 层，避免被 daisyUI 的组件子层覆盖。
-修改后运行 `npm run build`，检查生图、画廊、模型库和队列四个页面的浅色、深色及手机宽度。
+修改后运行 `npm run build`，检查生图、图生文、画廊、模型库和队列页面的浅色、深色及手机宽度；桌面布局改动还需要在打包后的应用里确认工具栏、侧边栏与滚动行为。
 服务缓存 Jinja 模板时，需在生成队列空闲后重启服务才能看到模板变化。

@@ -2,7 +2,7 @@
 {% block title %}生成队列 - mflux WebUI{% endblock %}
 {% block content %}
 <section x-data="queuePage" class="mx-auto max-w-[1400px]">
-  <header class="mb-6 flex flex-wrap items-end justify-between gap-3"><div><h1 class="text-[28px] font-semibold">生成队列</h1><p class="mt-1 text-sm text-base-content/60">当前等待 <span x-text="queueLength"></span> 个任务；进行中的任务会每秒自动刷新。</p></div><button @click="load" class="btn btn-outline btn-sm">刷新</button></header>
+  <header class="mb-6 flex flex-wrap items-end justify-between gap-3"><div><h1 class="text-[28px] font-semibold" data-page-heading>生成队列</h1><p class="mt-1 text-sm text-base-content/60">当前等待 <span x-text="queueLength"></span> 个任务；进行中的任务会每秒自动刷新。</p></div><button @click="load" class="btn btn-outline btn-sm">刷新</button></header>
   <div class="card overflow-hidden border border-base-300 bg-base-100">
     <div class="overflow-x-auto">
       <table class="table w-full min-w-[1000px] table-fixed">

@@ -369,11 +369,23 @@ fn main() {
             });
             let navigation_app = app.handle().clone();
             let new_window_app = app.handle().clone();
-            let window =
+            let mut window_builder =
                 WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into()))
                     .title("mflux WebUI")
                     .inner_size(1200.0, 820.0)
-                    .min_inner_size(760.0, 600.0)
+                    // 侧边栏 188px，再窄会挤压内容区。
+                    .min_inner_size(960.0, 640.0);
+            // 与系统标题栏合并：交通灯浮在自绘工具栏上，省下默议标题栏占用的高度。
+            #[cfg(target_os = "macos")]
+            {
+                window_builder = window_builder
+                    .hidden_title(true)
+                    .title_bar_style(tauri::TitleBarStyle::Overlay)
+                    .traffic_light_position(tauri::Position::Logical(tauri::LogicalPosition::new(
+                        18.0, 19.0,
+                    )));
+            }
+            let window = window_builder
                     .initialization_script("document.addEventListener('click', event => { const link = event.target.closest?.('a[target=\"_blank\"]'); if (link) { event.preventDefault(); location.assign(link.href); } }, true);")
                     .on_navigation(move |url| {
                         if open_image(&navigation_app, url) {
