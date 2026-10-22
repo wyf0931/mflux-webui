@@ -273,6 +273,15 @@
   overscroll-behavior: contain;
 }
 
+/* 可点击的表格行：焦点用底色高亮表示，避免全局 2px 黑框在弹窗关闭后残留。 */
+tr.task-row:focus-visible {
+  outline: none;
+}
+
+tr.task-row:focus-visible > td {
+  background: color-mix(in srgb, var(--color-base-content) 7%, transparent);
+}
+
 /* 桌面版：header 里只剩被隐藏的页面标题时整块收起，避免顶部留下多余空白。 */
 [data-desktop="true"] main header:has(> [data-page-heading]:only-child) {
   display: none;

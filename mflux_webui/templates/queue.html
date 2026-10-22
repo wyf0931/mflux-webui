@@ -11,7 +11,7 @@
         <thead class="bg-base-200"><tr><th>提交时间</th><th>状态</th><th>提示词</th><th>模型与参数</th><th>耗时</th><th>结果</th></tr></thead>
         <tbody>
           <template x-for="task in tasks" :key="task.taskId">
-            <tr class="cursor-pointer hover:bg-base-200/60" tabindex="0" @click="openDetail(task)" @keydown.enter.prevent="openDetail(task)">
+            <tr class="task-row cursor-pointer hover:bg-base-200/60" tabindex="0" @click="openDetail(task)" @keydown.enter.prevent="openDetail(task)">
               <td class="text-sm tabular-nums" x-text="formatDateTime(task.createdAt)"></td>
               <td><span class="badge" :class="statusClass(task.status)" x-text="statusLabel(task.status)"></span></td>
               <td class="text-sm"><p class="line-clamp-2 break-words" :title="task.prompt" x-text="task.prompt"></p></td>
