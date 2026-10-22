@@ -61,17 +61,17 @@
   </div>
 
   <dialog x-ref="previewDialog" @close="preview = null" class="modal" aria-labelledby="gallery-preview-title">
-    <div class="modal-box w-[calc(100%-2rem)] max-w-4xl overflow-hidden border border-base-300 bg-base-100 p-0">
-      <div class="flex items-start justify-between gap-3 border-b border-base-300 px-5 py-4">
+    <div class="modal-box preview-box flex max-h-[calc(100vh-3rem)] w-[calc(100%-2rem)] max-w-4xl flex-col overflow-hidden border border-base-300 bg-base-100 p-0">
+      <div class="flex shrink-0 items-start justify-between gap-3 border-b border-base-300 px-5 py-4">
         <div class="min-w-0">
           <h2 id="gallery-preview-title" class="text-base font-semibold" x-text="preview ? label(preview.model) : ''"></h2>
           <p class="mt-1 text-xs text-base-content/60" x-text="preview ? `${formatTimestamp(preview.timestamp)} · ${preview.width}×${preview.height} · ${preview.duration ? formatDuration(preview.duration) : '—'}` : ''"></p>
         </div>
         <form method="dialog"><button class="btn btn-sm btn-circle btn-ghost" aria-label="关闭预览">✕</button></form>
       </div>
-      <div class="bg-base-200 p-4"><img x-show="preview" x-cloak :src="preview ? `/static/images/${preview.timestamp}.png` : ''" :alt="preview?.prompt || '图片预览'" class="mx-auto max-h-[66vh] max-w-full rounded-box"></div>
-      <div class="grid gap-3 px-5 py-4">
-        <p class="max-h-32 overflow-y-auto whitespace-pre-wrap break-words text-sm leading-relaxed" x-text="preview?.prompt"></p>
+      <div class="preview-media flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-base-200 p-4"><img x-show="preview" x-cloak :src="preview ? `/static/images/${preview.timestamp}.png` : ''" :alt="preview?.prompt || '图片预览'" class="max-h-[52vh] w-auto max-w-full rounded-box object-contain"></div>
+      <div class="grid shrink-0 gap-3 border-t border-base-300 px-5 py-4">
+        <p class="max-h-24 overflow-y-auto whitespace-pre-wrap break-words text-sm leading-relaxed" x-text="preview?.prompt"></p>
         <div class="flex flex-wrap justify-end gap-2">
           <a x-show="preview" x-cloak :href="preview ? `/static/images/${preview.timestamp}.png` : ''" target="_blank" rel="noopener" class="btn btn-sm">打开原图</a>
           <button type="button" class="btn btn-sm" @click="reuse(preview)">使用此参数</button>

@@ -64,10 +64,10 @@ Alpine.data("generationPage", () => ({
   get referenceEditing() { return this.isQwenTurbo && this.form.generationMode === "reference"; },
   get guidanceEditable() { return this.selectedModel?.guidanceMode === "editable"; },
   get guidanceHint() {
-    if (this.isQwenTurbo) return "Turbo 无需 CFG，引导系数固定为 1.0。";
-    if (this.selectedModel?.guidanceMode === "ignored") return "该模型不使用引导系数。";
-    if (this.selectedModel?.guidanceMode === "fixed") return "该模型使用默认引导设置 1.0。";
-    return "推荐使用模型默认值 1.0；提高数值可能影响画面质量。";
+    if (this.isQwenTurbo) return "固定 1.0";
+    if (this.selectedModel?.guidanceMode === "ignored") return "该模型不使用";
+    if (this.selectedModel?.guidanceMode === "fixed") return "默认 1.0";
+    return "推荐 1.0";
   },
   get canReadClipboard() { return Boolean(navigator.clipboard?.read); },
   async init() { try { this.models = (await apiClient.get("/api/models/catalog")).filter((model) => model.installed); this.form.modelId = this.models[0]?.repoId || ""; this.changeModel(); this.applyReuseParams(); } catch (error) { this.error = error.message; } },
