@@ -130,6 +130,8 @@ gh run list --workflow desktop.yml
 
 发布前更新 `src-tauri/tauri.conf.json` 与 `src-tauri/Cargo.toml` 的版本，并使用对应的 `desktop-v<版本>` 标签。Python 包版本与桌面应用版本可以分别维护。Release 始终标记为预发布，由维护者验证下载包后再决定是否转为正式版。
 
+完整的发版清单（版本号、发布说明、打标签、发布后核对）见 `AGENTS.md` 的「发布桌面版」一节。
+
 ## 签名与公证
 
 在 GitHub 仓库的 Actions secrets 配置：
