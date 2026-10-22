@@ -117,14 +117,21 @@ test("更换图片会清空上一次描述结果", async () => {
   assert.equal(page.copied, "");
 });
 
-test("关注点按钮可快速填入与取消，输出模型与下载状态标签", async () => {
+test("关注点按钮支持多选，以逗号拼接并可逐个取消", async () => {
   const { page } = setup({ model: { modelId: "lmstudio-community/Qwen3-VL-8B-Instruct-MLX-4bit", cached: false } });
   await page.init();
   assert.equal(page.vlmLabel, "视觉模型未下载");
   page.applyFocus("聚焦人物");
-  assert.equal(page.focus, "聚焦人物");
+  page.applyFocus("光线氛围");
+  assert.equal(page.focus, "聚焦人物, 光线氛围");
+  assert.deepEqual([...page.focusList], ["聚焦人物", "光线氛围"]);
   page.applyFocus("聚焦人物");
-  assert.equal(page.focus, "");
+  assert.equal(page.focus, "光线氛围");
+  // 手写关注点与预设混排时也能正确解析（兼容中文逗号）
+  page.focus = "背景更亮，光线氛围";
+  assert.deepEqual([...page.focusList], ["背景更亮", "光线氛围"]);
+  page.applyFocus("光线氛围");
+  assert.equal(page.focus, "背景更亮");
   assert.equal(page.imageSizeLabel, "");
   page.setImage(png());
   assert.match(page.imageSizeLabel, /KB$/);

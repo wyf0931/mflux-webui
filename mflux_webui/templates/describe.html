@@ -51,16 +51,15 @@
                  placeholder="例如：聚焦人物、服装细节、光线氛围" class="input w-full">
           <div class="flex flex-wrap gap-2">
             <template x-for="preset in focusPresets" :key="preset">
-              <button type="button" class="btn btn-xs"
-                      :class="focus === preset ? 'btn-primary' : 'btn-outline'"
-                      :aria-pressed="focus === preset"
+              <button type="button" class="chip"
+                      :aria-pressed="focusList.includes(preset)"
                       @click="applyFocus(preset)" :disabled="describing" x-text="preset"></button>
             </template>
           </div>
-          <p class="text-xs text-base-content/60">留空则均衡描述整张图；填写后会优先展开该部分。</p>
+          <p class="text-xs text-base-content/60">留空则均衡描述整张图；可多选，用逗号分隔，填写后会优先展开这些部分。</p>
         </div>
 
-        <button type="submit" class="btn btn-primary btn-block" :disabled="describing || !image">
+        <button type="submit" class="btn btn-primary btn-lg btn-block" :disabled="describing || !image">
           <span x-show="describing" x-cloak class="loading loading-spinner loading-xs"></span>
           <span x-text="describeLabel"></span>
         </button>

@@ -283,7 +283,12 @@ Alpine.data("describePage", () => ({
     this.releasePreview();
     this.image = null; this.description = null; this.copied = ""; this.error = "";
   },
-  applyFocus(text) { this.focus = this.focus === text ? "" : text; },
+  get focusList() { return this.focus.split(/[,，]/).map((item) => item.trim()).filter(Boolean); },
+  applyFocus(preset) {
+    const list = this.focusList;
+    const next = list.includes(preset) ? list.filter((item) => item !== preset) : [...list, preset];
+    this.focus = next.join(", ");
+  },
   startTimer() { this.stopTimer(); this.elapsedSeconds = 0; this.elapsedTimer = window.setInterval(() => { this.elapsedSeconds += 1; }, 1000); },
   stopTimer() { if (this.elapsedTimer) window.clearInterval(this.elapsedTimer); this.elapsedTimer = null; },
   async runDescribe() {

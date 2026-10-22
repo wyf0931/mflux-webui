@@ -115,8 +115,26 @@
   .site-header .tab { height: 80px; padding-inline: 16px; font-size: 1rem; font-weight: 500; }
   .gallery-card { transition: box-shadow 150ms ease; }
   .gallery-card:hover, .gallery-card:focus-within { box-shadow: var(--shadow-lg); }
-  .gallery-filter { border-radius: 9999px; }
-  .gallery-filter[aria-pressed="true"] { color: var(--color-base-content); border-color: var(--color-base-content); background: var(--color-base-200); }
+  /* 统一的筛选／选择胶囊：画廊模型筛选与图生文关注点共用同一套样式。 */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    padding-inline: 14px;
+    border: 1px solid var(--color-base-300);
+    border-radius: 9999px;
+    background: var(--color-base-100);
+    color: color-mix(in srgb, var(--color-base-content) 78%, transparent);
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+  }
+  .chip:hover { border-color: color-mix(in srgb, var(--color-base-content) 38%, transparent); color: var(--color-base-content); }
+  .chip[aria-pressed="true"] { border-color: var(--color-base-content); background: var(--color-base-200); color: var(--color-base-content); font-weight: 600; }
+  .chip:disabled { opacity: 0.45; cursor: not-allowed; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -253,6 +271,11 @@
   padding: 18px 24px 28px;
   overflow-y: auto;
   overscroll-behavior: contain;
+}
+
+/* 桌面版：header 里只剩被隐藏的页面标题时整块收起，避免顶部留下多余空白。 */
+[data-desktop="true"] main header:has(> [data-page-heading]:only-child) {
+  display: none;
 }
 
 /* 图生文页在桌面版没有页面标题，模型徽章改为右对齐并收紧间距。 */
