@@ -336,8 +336,20 @@ Alpine.data("modelLibrary", () => ({
 }));
 
 Alpine.data("galleryPage", () => ({
-  images: [], selected: "all", error: "",
-  async init() { try { this.images = await apiClient.get("/api/history"); } catch (error) { this.error = error.message; } },
+  images: [], selected: "all", error: "", view: "grid", preview: null,
+  async init() {
+    try { this.images = await apiClient.get("/api/history"); } catch (error) { this.error = error.message; }
+    try { this.view = localStorage.getItem("mflux.galleryView") === "table" ? "table" : "grid"; } catch { /* 存储受限时保持默认网格视图 */ }
+  },
+  toggleView() {
+    this.view = this.view === "grid" ? "table" : "grid";
+    try { localStorage.setItem("mflux.galleryView", this.view); } catch { /* 仅本页生效 */ }
+  },
+  openPreview(image) {
+    if (!image) return;
+    this.preview = image;
+    this.$refs.previewDialog?.showModal();
+  },
   get models() { return ["all", ...new Set(this.images.map((image) => image.model))]; },
   get filteredImages() { return this.selected === "all" ? this.images : this.images.filter((image) => image.model === this.selected); },
   label(model) {
@@ -358,7 +370,17 @@ Alpine.data("galleryPage", () => ({
     }));
     window.location.assign("/");
   },
-  async remove(timestamp) { if (!confirm("确定要删除这张图片吗？此操作无法撤销。")) return; try { await apiClient.delete(`/api/history/${timestamp}`); this.images = this.images.filter((image) => image.timestamp !== timestamp); } catch (error) { this.error = error.message; } },
+  async remove(timestamp) {
+    if (!timestamp || !confirm("确定要删除这张图片吗？此操作无法撤销。")) return;
+    try {
+      await apiClient.delete(`/api/history/${timestamp}`);
+      this.images = this.images.filter((image) => image.timestamp !== timestamp);
+      if (this.preview?.timestamp === timestamp) {
+        this.preview = null;
+        this.$refs.previewDialog?.close();
+      }
+    } catch (error) { this.error = error.message; }
+  },
   async copy(prompt) { await copyToClipboard(prompt); },
   formatDuration, formatTimestamp,
 }));

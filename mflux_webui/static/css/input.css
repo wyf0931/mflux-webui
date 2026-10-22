@@ -274,11 +274,13 @@
 }
 
 /* 可点击的表格行：焦点用底色高亮表示，避免全局 2px 黑框在弹窗关闭后残留。 */
-tr.task-row:focus-visible {
+tr.task-row:focus-visible,
+tr.gallery-row:focus-visible {
   outline: none;
 }
 
-tr.task-row:focus-visible > td {
+tr.task-row:focus-visible > td,
+tr.gallery-row:focus-visible > td {
   background: color-mix(in srgb, var(--color-base-content) 7%, transparent);
 }
 

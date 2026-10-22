@@ -2,16 +2,29 @@
 {% block title %}画廊 - mflux WebUI{% endblock %}
 {% block content %}
 <section x-data="galleryPage" class="mx-auto max-w-[1400px]">
-  <header class="mb-8"><h1 class="text-[28px] font-semibold" data-page-heading>画廊</h1></header><div class="mb-6 flex flex-wrap items-center gap-3"><span class="text-sm text-base-content/60">按模型筛选：</span><template x-for="model in models" :key="model"><button @click="selected = model" class="chip" :aria-pressed="selected === model" x-text="label(model)"></button></template></div>
-  <div class="grid grid-cols-1 gap-4 min-[640px]:grid-cols-2 min-[960px]:grid-cols-3 min-[1680px]:grid-cols-4">
+  <header class="mb-8"><h1 class="text-[28px] font-semibold" data-page-heading>画廊</h1></header>
+  <div class="mb-6 flex flex-wrap items-center gap-3">
+    <span class="text-sm text-base-content/60">按模型筛选：</span>
+    <template x-for="model in models" :key="model"><button @click="selected = model" class="chip" :aria-pressed="selected === model" x-text="label(model)"></button></template>
+    <div class="ml-auto flex items-center gap-1">
+      <span class="mr-1 text-xs tabular-nums text-base-content/60" x-text="`${filteredImages.length} 张`"></span>
+      <button type="button" @click="toggleView" class="btn btn-ghost btn-square btn-sm" :aria-label="view === 'grid' ? '切换为表格显示' : '切换为网格显示'" :title="view === 'grid' ? '切换为表格显示' : '切换为网格显示'">
+        <svg x-show="view === 'grid'" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><use href="#icon-queue"/></svg>
+        <svg x-show="view === 'table'" x-cloak width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><use href="#icon-gallery"/></svg>
+      </button>
+    </div>
+  </div>
+
+  {# 网格视图：默认按窗口宽度自适应 2/3/4 列。 #}
+  <div x-show="view === 'grid'" class="grid grid-cols-1 gap-4 min-[640px]:grid-cols-2 min-[960px]:grid-cols-3 min-[1680px]:grid-cols-4">
     <template x-for="image in filteredImages" :key="image.timestamp">
       <article class="card gallery-card overflow-hidden border border-base-300 bg-base-100 shadow-sm">
         <div class="group relative bg-base-200">
-          <a :href="`/static/images/${image.timestamp}.png`" target="_blank"><img :src="`/static/images/${image.timestamp}.png`" :alt="image.prompt" loading="lazy" class="block h-auto w-full"></a>
+          <button type="button" @click="openPreview(image)" class="block w-full" :aria-label="`预览：${image.prompt}`"><img :src="`/static/images/${image.timestamp}.png`" :alt="image.prompt" loading="lazy" class="block h-auto w-full"></button>
           <div class="absolute right-3 bottom-3 flex gap-2 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
             <button @click.stop="reuse(image)" class="btn btn-square btn-sm border-0 bg-neutral/80 text-neutral-content hover:bg-neutral" aria-label="使用此参数重新生成" title="使用此参数重新生成"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11a8 8 0 1 0 2 5"/><path d="M20 4v7h-7"/></svg></button>
             <button @click.stop="copy(image.prompt)" class="btn btn-square btn-sm border-0 bg-neutral/80 text-neutral-content hover:bg-neutral" aria-label="复制完整提示词"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
-            <button @click="remove(image.timestamp)" class="btn btn-error btn-square btn-sm text-error-content" aria-label="删除图片"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14M10 10v6m4-6v6"/></svg></button>
+            <button @click.stop="remove(image.timestamp)" class="btn btn-error btn-square btn-sm text-error-content" aria-label="删除图片"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14M10 10v6m4-6v6"/></svg></button>
           </div>
         </div>
         <div class="card-body gap-3 p-4"><p class="line-clamp-2 whitespace-pre-wrap text-sm" x-text="image.prompt"></p><div class="flex items-center gap-2 text-xs text-base-content/60"><span x-text="`${image.width}×${image.height}`"></span><span aria-hidden="true">·</span><span x-text="formatDuration(image.duration)"></span></div><p class="text-xs text-base-content/50" x-text="formatTimestamp(image.timestamp)"></p></div>
@@ -19,6 +32,57 @@
     </template>
     <div x-show="!filteredImages.length" x-cloak class="alert col-span-full flex-col py-16 text-center"><div class="text-5xl">🎨</div><h2 class="text-2xl font-semibold">暂无图像</h2><a href="/" class="btn btn-primary btn-sm">开始生成</a></div>
   </div>
+
+  {# 表格视图：小图 + 元信息 + 操作列，整行可点击预览。 #}
+  <div x-show="view === 'table'" x-cloak class="card overflow-hidden border border-base-300 bg-base-100">
+    <div class="overflow-x-auto">
+      <table class="table w-full min-w-[1040px]">
+        <thead class="bg-base-200"><tr><th class="w-20">图片</th><th class="w-44 whitespace-nowrap">生成时间</th><th class="w-52 whitespace-nowrap">模型</th><th class="w-28 whitespace-nowrap">尺寸</th><th class="w-24 whitespace-nowrap">耗时</th><th>提示词</th><th class="w-32 text-right whitespace-nowrap">操作</th></tr></thead>
+        <tbody>
+          <template x-for="image in filteredImages" :key="image.timestamp">
+            <tr class="gallery-row cursor-pointer hover:bg-base-200/60" tabindex="0" @click="openPreview(image)" @keydown.enter.prevent="openPreview(image)">
+              <td><button type="button" @click.stop="openPreview(image)" class="block" :aria-label="`预览：${image.prompt}`"><img :src="`/static/images/${image.timestamp}.png`" :alt="image.prompt" loading="lazy" class="h-12 w-12 rounded-field object-cover"></button></td>
+              <td class="whitespace-nowrap text-sm tabular-nums" x-text="formatTimestamp(image.timestamp)"></td>
+              <td class="whitespace-nowrap text-sm" x-text="label(image.model)"></td>
+              <td class="text-sm tabular-nums" x-text="`${image.width}×${image.height}`"></td>
+              <td class="whitespace-nowrap text-sm" x-text="image.duration ? formatDuration(image.duration) : '—'"></td>
+              <td class="text-sm"><p class="line-clamp-2 break-words" :title="image.prompt" x-text="image.prompt"></p></td>
+              <td class="text-right whitespace-nowrap">
+                <button type="button" @click.stop="reuse(image)" class="btn btn-ghost btn-sm" aria-label="使用此参数重新生成" title="使用此参数重新生成"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11a8 8 0 1 0 2 5"/><path d="M20 4v7h-7"/></svg></button>
+                <button type="button" @click.stop="copy(image.prompt)" class="btn btn-ghost btn-sm" aria-label="复制完整提示词" title="复制完整提示词"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+                <button type="button" @click.stop="remove(image.timestamp)" class="btn btn-ghost btn-sm text-error" aria-label="删除图片" title="删除图片"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14M10 10v6m4-6v6"/></svg></button>
+              </td>
+            </tr>
+          </template>
+          <tr x-show="!filteredImages.length"><td colspan="7" class="py-12 text-center text-base-content/60">暂无生成结果</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <dialog x-ref="previewDialog" @close="preview = null" class="modal" aria-labelledby="gallery-preview-title">
+    <div class="modal-box w-[calc(100%-2rem)] max-w-4xl overflow-hidden border border-base-300 bg-base-100 p-0">
+      <div class="flex items-start justify-between gap-3 border-b border-base-300 px-5 py-4">
+        <div class="min-w-0">
+          <h2 id="gallery-preview-title" class="text-base font-semibold" x-text="preview ? label(preview.model) : ''"></h2>
+          <p class="mt-1 text-xs text-base-content/60" x-text="preview ? `${formatTimestamp(preview.timestamp)} · ${preview.width}×${preview.height} · ${preview.duration ? formatDuration(preview.duration) : '—'}` : ''"></p>
+        </div>
+        <form method="dialog"><button class="btn btn-sm btn-circle btn-ghost" aria-label="关闭预览">✕</button></form>
+      </div>
+      <div class="bg-base-200 p-4"><img x-show="preview" x-cloak :src="preview ? `/static/images/${preview.timestamp}.png` : ''" :alt="preview?.prompt || '图片预览'" class="mx-auto max-h-[66vh] max-w-full rounded-box"></div>
+      <div class="grid gap-3 px-5 py-4">
+        <p class="max-h-32 overflow-y-auto whitespace-pre-wrap break-words text-sm leading-relaxed" x-text="preview?.prompt"></p>
+        <div class="flex flex-wrap justify-end gap-2">
+          <a x-show="preview" x-cloak :href="preview ? `/static/images/${preview.timestamp}.png` : ''" target="_blank" rel="noopener" class="btn btn-sm">打开原图</a>
+          <button type="button" class="btn btn-sm" @click="reuse(preview)">使用此参数</button>
+          <button type="button" class="btn btn-sm btn-ghost text-error" @click="remove(preview?.timestamp)">删除</button>
+          <form method="dialog"><button class="btn btn-sm btn-primary">关闭</button></form>
+        </div>
+      </div>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button aria-label="关闭图片预览">关闭</button></form>
+  </dialog>
+
   <div x-show="error" x-cloak role="alert" class="alert alert-error fixed right-6 bottom-6 z-50 w-auto max-w-md shadow-lg" x-text="error"></div>
 </section>
 {% endblock %}
