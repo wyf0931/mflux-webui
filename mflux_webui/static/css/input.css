@@ -122,3 +122,170 @@
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
 }
+
+/* ---------- macOS 桌面版布局 ----------
+ * Web 版保持顶部标签导航；桌面版改成侧边栏 + 与系统标题栏合并的紧凑工具栏，
+ * 只有内容区滚动，避免整页出现滚动条和大字号标题。
+ * 以下规则不放进 @layer，以便覆盖 Tailwind 工具类。
+ */
+.app-toolbar,
+.app-sidebar {
+  display: none;
+}
+
+[data-desktop="true"] body {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* 工具栏：左侧给交通灯留白，整条可拖动窗口。 */
+[data-desktop="true"] .app-toolbar {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: 52px;
+  padding: 0 12px 0 86px;
+  border-bottom: 1px solid var(--color-base-300);
+  background: color-mix(in srgb, var(--color-base-200) 72%, var(--color-base-100));
+  backdrop-filter: saturate(180%) blur(20px);
+  user-select: none;
+}
+
+[data-desktop="true"] .app-toolbar-title {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+[data-desktop="true"] .app-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+[data-desktop="true"] .app-toolbar-button {
+  width: 28px;
+  height: 28px;
+  min-height: 0;
+  padding: 0;
+  color: color-mix(in srgb, var(--color-base-content) 70%, transparent);
+}
+
+[data-desktop="true"] .app-body {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* 侧边栏：source list 风格，条目 30px 高、选中态为圆角底色。 */
+[data-desktop="true"] .app-sidebar {
+  display: block;
+  flex: 0 0 188px;
+  padding: 8px;
+  overflow-y: auto;
+  border-right: 1px solid var(--color-base-300);
+  background: var(--color-base-200);
+}
+
+[data-desktop="true"] .app-nav {
+  display: grid;
+  gap: 1px;
+}
+
+[data-desktop="true"] .app-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding-inline: 8px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  color: color-mix(in srgb, var(--color-base-content) 86%, transparent);
+}
+
+[data-desktop="true"] .app-nav-item:hover {
+  background: color-mix(in srgb, var(--color-base-content) 6%, transparent);
+}
+
+[data-desktop="true"] .app-nav-item-current,
+[data-desktop="true"] .app-nav-item[aria-current="page"] {
+  background: color-mix(in srgb, var(--color-base-content) 11%, transparent);
+  color: var(--color-base-content);
+  font-weight: 600;
+}
+
+[data-desktop="true"] .app-nav-icon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  color: color-mix(in srgb, var(--color-base-content) 62%, transparent);
+}
+
+[data-desktop="true"] .app-nav-item-current .app-nav-icon,
+[data-desktop="true"] .app-nav-item[aria-current="page"] .app-nav-icon {
+  color: var(--color-primary);
+}
+
+[data-desktop="true"] .app-content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* 桌面版不显示 Web 顶部标签栏。 */
+[data-desktop="true"] .site-header {
+  display: none;
+}
+
+/* 只有内容区自己滚动；页面级滚动条全部取消。 */
+[data-desktop="true"] main {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-width: none;
+  margin: 0;
+  padding: 18px 24px 28px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* 页面级大标题已上提到工具栏，正文里隐藏；其余标题收敛为区块标题尺寸。 */
+[data-desktop="true"] main [data-page-heading] {
+  display: none;
+}
+
+[data-desktop="true"] main h1 {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* macOS 风格 overlay 滚动条：细拇指、透明轨道，不占内容宽度。 */
+[data-desktop="true"] ::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+
+[data-desktop="true"] ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+[data-desktop="true"] ::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 9999px;
+  background-clip: content-box;
+  background-color: color-mix(in srgb, var(--color-base-content) 26%, transparent);
+}
+
+[data-desktop="true"] ::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in srgb, var(--color-base-content) 40%, transparent);
+}
+
+[data-desktop="true"] ::-webkit-scrollbar-corner {
+  background: transparent;
+}

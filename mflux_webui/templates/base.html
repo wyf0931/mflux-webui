@@ -6,29 +6,76 @@
     <script>if (document.documentElement.dataset.desktop !== 'true') { try { document.documentElement.dataset.theme = localStorage.getItem('mflux.theme') === 'rausch-dark' ? 'rausch-dark' : 'rausch'; } catch (_) { document.documentElement.dataset.theme = 'rausch'; } }</script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
 </head>
+{% set nav_items = [
+  ('index', '/', '生图', 'generate'),
+  ('describe', '/describe', '图生文', 'describe'),
+  ('gallery', '/gallery', '画廊', 'gallery'),
+  ('generation_queue', '/queue', '队列', 'queue'),
+  ('models', '/models', '模型库', 'models'),
+] %}
+{% set nav_title = namespace(label='') %}
+{% for endpoint, path, label, icon in nav_items %}{% if request.endpoint == endpoint %}{% set nav_title.label = label %}{% endif %}{% endfor %}
 <body x-data="theme" class="bg-base-100 text-base-content">
-    <header class="site-header sticky top-0 z-50 border-b border-base-300 bg-base-200">
-      <div class="navbar mx-auto max-w-[1280px] px-4 md:px-8">
-        <div class="navbar-start w-auto flex-1"><a href="/" class="brand" aria-label="mflux WebUI 首页">mflux WebUI</a></div>
-        <nav class="navbar-center tabs tabs-border hidden md:flex" aria-label="主导航">
-          {% for endpoint, path, label in [('index', '/', '生图'), ('describe', '/describe', '图生文'), ('gallery', '/gallery', '画廊'), ('generation_queue', '/queue', '队列'), ('models', '/models', '模型库')] %}
-          <a href="{{ path }}" class="tab {% if request.endpoint == endpoint %}tab-active{% endif %}" {% if request.endpoint == endpoint %}aria-current="page"{% endif %}>{{ label }}</a>
-          {% endfor %}
-        </nav>
-        <div class="navbar-end w-auto flex-1 gap-2">
-            <button @click="toggle" class="btn btn-ghost btn-square" :aria-label="current === 'rausch-dark' ? '切换至浅色主题' : '切换至深色主题'" aria-label="切换至深色主题">
-              <svg x-show="current !== 'rausch-dark'" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M20.9 13.3A9 9 0 0 1 10.7 3.1a9 9 0 1 0 10.2 10.2Z"/></svg>
-              <svg x-show="current === 'rausch-dark'" x-cloak width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg>
-            </button>
-            <details class="dropdown dropdown-end md:hidden"><summary class="btn btn-ghost btn-square" aria-label="打开导航菜单"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></summary><ul class="menu dropdown-content z-[1] mt-3 w-44 rounded-box border border-base-300 bg-base-100 p-2 shadow-lg">
-              {% for endpoint, path, label in [('index', '/', '生图'), ('describe', '/describe', '图生文'), ('gallery', '/gallery', '画廊'), ('generation_queue', '/queue', '队列'), ('models', '/models', '模型库')] %}
-              <li><a href="{{ path }}" {% if request.endpoint == endpoint %}aria-current="page"{% endif %}>{{ label }}</a></li>
-              {% endfor %}
-            </ul></details>
-        </div>
+    <svg class="sr-only" aria-hidden="true" focusable="false"><defs>
+      <symbol id="icon-generate" viewBox="0 0 24 24"><path d="M11.4 3.3l1.6 4 4 1.6-4 1.6-1.6 4-1.6-4-4-1.6 4-1.6z"/><path d="M18.4 14.6l.85 2.1 2.1.85-2.1.85-.85 2.1-.85-2.1-2.1-.85 2.1-.85z"/></symbol>
+      <symbol id="icon-describe" viewBox="0 0 24 24"><rect x="3" y="4" width="9.5" height="9.5" rx="2"/><path d="M5.9 11.2l2.1-2.3 1.8 2 1.5-1.4"/><path d="M16 7.6h5M16 12h5M16 16.4h3.4M3 18h9"/></symbol>
+      <symbol id="icon-gallery" viewBox="0 0 24 24"><rect x="3.2" y="3.2" width="7.2" height="7.2" rx="1.8"/><rect x="13.6" y="3.2" width="7.2" height="7.2" rx="1.8"/><rect x="3.2" y="13.6" width="7.2" height="7.2" rx="1.8"/><rect x="13.6" y="13.6" width="7.2" height="7.2" rx="1.8"/></symbol>
+      <symbol id="icon-queue" viewBox="0 0 24 24"><path d="M9 6h12M9 12h12M9 18h12M4 6h.01M4 12h.01M4 18h.01"/></symbol>
+      <symbol id="icon-models" viewBox="0 0 24 24"><path d="M12 3l8.4 4.2L12 11.4 3.6 7.2z"/><path d="M3.6 12.2L12 16.4l8.4-4.2"/><path d="M3.6 16.8L12 21l8.4-4.2"/></symbol>
+    </defs></svg>
+
+    {# 桌面版：与系统标题栏合并的紧凑工具栏，左侧为交通灯留白，可拖动窗口。 #}
+    <header class="app-toolbar" data-tauri-drag-region>
+      <span class="app-toolbar-title" data-tauri-drag-region>{{ nav_title.label }}</span>
+      <div class="app-toolbar-actions">
+        <button @click="toggle" class="btn btn-ghost btn-sm app-toolbar-button" :aria-label="current === 'rausch-dark' ? '切换至浅色主题' : '切换至深色主题'" aria-label="切换至深色主题">
+          <svg x-show="current !== 'rausch-dark'" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M20.9 13.3A9 9 0 0 1 10.7 3.1a9 9 0 1 0 10.2 10.2Z"/></svg>
+          <svg x-show="current === 'rausch-dark'" x-cloak width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg>
+        </button>
       </div>
     </header>
-    <main class="mx-auto max-w-[1280px] px-4 py-8 md:px-8 md:py-12">{% block content %}{% endblock %}</main>
+
+    <div class="app-body">
+      {# 桌面版侧边栏导航；Web 版隐藏，改用顶部标签栏。 #}
+      <aside class="app-sidebar">
+        <nav class="app-nav" aria-label="主导航">
+          {% for endpoint, path, label, icon in nav_items %}
+          {% set is_current = request.endpoint == endpoint %}
+          <a href="{{ path }}" class="app-nav-item{{ ' app-nav-item-current' if is_current else '' }}" aria-current="{{ 'page' if is_current else 'false' }}">
+            <svg class="app-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-{{ icon }}"/></svg>
+            <span>{{ label }}</span>
+          </a>
+          {% endfor %}
+        </nav>
+      </aside>
+
+      <div class="app-content">
+        <header class="site-header sticky top-0 z-50 border-b border-base-300 bg-base-200">
+          <div class="navbar mx-auto max-w-[1280px] px-4 md:px-8">
+            <div class="navbar-start w-auto flex-1"><a href="/" class="brand" aria-label="mflux WebUI 首页">mflux WebUI</a></div>
+            <nav class="navbar-center tabs tabs-border hidden md:flex" aria-label="主导航">
+              {% for endpoint, path, label, icon in nav_items %}
+              {% set is_current = request.endpoint == endpoint %}
+              <a href="{{ path }}" class="tab{{ ' tab-active' if is_current else '' }}" aria-current="{{ 'page' if is_current else 'false' }}">{{ label }}</a>
+              {% endfor %}
+            </nav>
+            <div class="navbar-end w-auto flex-1 gap-2">
+                <button @click="toggle" class="btn btn-ghost btn-square" :aria-label="current === 'rausch-dark' ? '切换至浅色主题' : '切换至深色主题'" aria-label="切换至深色主题">
+                  <svg x-show="current !== 'rausch-dark'" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M20.9 13.3A9 9 0 0 1 10.7 3.1a9 9 0 1 0 10.2 10.2Z"/></svg>
+                  <svg x-show="current === 'rausch-dark'" x-cloak width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg>
+                </button>
+                <details class="dropdown dropdown-end md:hidden"><summary class="btn btn-ghost btn-square" aria-label="打开导航菜单"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></summary><ul class="menu dropdown-content z-[1] mt-3 w-44 rounded-box border border-base-300 bg-base-100 p-2 shadow-lg">
+                  {% for endpoint, path, label, icon in nav_items %}
+                  {% set is_current = request.endpoint == endpoint %}
+                  <li><a href="{{ path }}" aria-current="{{ 'page' if is_current else 'false' }}">{{ label }}</a></li>
+                  {% endfor %}
+                </ul></details>
+            </div>
+          </div>
+        </header>
+        <main class="mx-auto max-w-[1280px] px-4 py-8 md:px-8 md:py-12">{% block content %}{% endblock %}</main>
+      </div>
+    </div>
     <script defer src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html>

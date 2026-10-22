@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}生图 - mflux WebUI{% endblock %}
 {% block content %}
-<section x-data="generationPage" @paste.window="pasteImage($event)" class="mx-auto max-w-[1400px]"><header class="mb-4"><h1 class="text-[28px] font-semibold">图像生成</h1></header><div x-show="reuseNotice" x-cloak class="alert alert-info mb-4" x-text="reuseNotice"></div><div class="grid grid-cols-1 gap-8 lg:grid-cols-2">
+<section x-data="generationPage" @paste.window="pasteImage($event)" class="mx-auto max-w-[1400px]"><header class="mb-4"><h1 class="text-[28px] font-semibold" data-page-heading>图像生成</h1></header><div x-show="reuseNotice" x-cloak class="alert alert-info mb-4" x-text="reuseNotice"></div><div class="grid grid-cols-1 gap-8 lg:grid-cols-2">
   <form x-ref="form" @submit.prevent="submit" class="card border border-base-300 bg-base-100 shadow-sm" enctype="multipart/form-data"><div class="card-body gap-6 p-6">
     <label class="grid gap-2"><span class="text-sm font-medium">模型</span><select x-model="form.modelId" @change="changeModel" name="modelId" class="select  mt-2 w-full"><template x-for="model in models" :key="model.repoId"><option :value="model.repoId" x-text="model.name"></option></template><option x-show="!models.length" value="">请先在模型库下载模型</option></select><span class="text-xs mt-2 text-base-content/60" x-text="selectedModel ? `${selectedModel.family} · ${selectedModel.sizeGB.toFixed(1)} GB · 默认 ${selectedModel.steps} 步` : ''"></span></label>
     <label class="grid gap-2"><span class="text-sm font-medium">提示词</span><textarea x-model="form.prompt" name="prompt" rows="5" placeholder="描述你想要生成的图像..." required class="textarea  mt-2 w-full"></textarea></label>
